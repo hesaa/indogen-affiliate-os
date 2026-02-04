@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { db } from '@/lib/db'
+import { users } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 import { hashPassword } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
@@ -24,9 +26,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    })
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1)
 
     if (existingUser) {
       return NextResponse.json(
@@ -39,21 +43,19 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashPassword(password)
 
     // Create user with selected plan
-    const user = await prisma.user.create({
-      data: {
+    const [user] = await db
+      .insert(users)
+      .values({
         email,
-        password: hashedPassword,
+        password_hash: hashedPassword,
         plan,
-      },
-      select: {
-        id: true,
-        email: true,
-        plan: true,
-        createdAt: true,
-      },
-    })
+        role: 'user',
+      })
+      .returning()
 
-    return NextResponse.json(user, { status: 201 })
+    const { password_hash, ...userWithoutPassword } = user
+
+    return NextResponse.json(userWithoutPassword, { status: 201 })
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json(

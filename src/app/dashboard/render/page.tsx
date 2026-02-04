@@ -1,10 +1,13 @@
+"use client"
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { RenderJobCard } from '@/components/dashboard/RenderJobCard'
-import { useRenderJob } from '@/hooks/useRenderJob'
+import { useRenderJobs } from '@/hooks/useRenderJob'
+import { RenderJob } from '@/types'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -20,7 +23,7 @@ const renderJobSchema = z.object({
   template: z.string().min(1, 'Template is required'),
   caption: z.string().optional(),
   hashtags: z.string().optional(),
-  watermark: z.string().optional().url('Must be a valid URL'),
+  watermark: z.string().url('Must be a valid URL').optional().or(z.literal('')),
 })
 
 type RenderJobFormData = z.infer<typeof renderJobSchema>
@@ -28,7 +31,7 @@ type RenderJobFormData = z.infer<typeof renderJobSchema>
 export default function RenderPage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const { jobs, isLoading, createJob, deleteJob } = useRenderJob()
+  const { jobs, isLoading, createJob, deleteJob } = useRenderJobs()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState('')
 
@@ -152,11 +155,10 @@ export default function RenderPage() {
                     key={template.id}
                     type="button"
                     onClick={() => handleTemplateSelect(template.id)}
-                    className={`w-full p-4 border rounded-lg transition-all ${
-                      selectedTemplate === template.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
+                    className={`w-full p-4 border rounded-lg transition-all ${selectedTemplate === template.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -249,7 +251,7 @@ export default function RenderPage() {
       ) : (
         <div className="space-y-4">
           {jobs?.length > 0 ? (
-            jobs.map((job) => (
+            jobs.map((job: RenderJob) => (
               <RenderJobCard
                 key={job.id}
                 job={job}

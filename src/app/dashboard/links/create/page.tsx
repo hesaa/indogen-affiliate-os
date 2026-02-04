@@ -1,17 +1,23 @@
+"use client"
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useMutation, useQuery } from 'react-query'
 import { useSession } from 'next-auth/react'
-import { Input, Button, Card, Badge, Select, Textarea } from '@/components/ui'
-import { api } from '@/lib/api'
+import { Input } from '@/components/ui/Input'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
+import apiClient from '@/lib/api-client'
 import { useToast } from '@/hooks/useToast'
 import { useAuth } from '@/hooks/useAuth'
+import { Loader2 } from 'lucide-react'
 
 export default function CreateLinkPage() {
-  const { data: session } = useSession()
   const { user } = useAuth()
   const router = useRouter()
-  const { toast } = useToast()
+  const toast = useToast()
 
   const [formData, setFormData] = useState({
     targetUrl: '',
@@ -24,36 +30,19 @@ export default function CreateLinkPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { mutate: createLink } = useMutation(
-    async (data: typeof formData) => {
-      const response = await api.post('/api/links', data)
-      return response.data
-    },
-    {
-      onSuccess: (data) => {
-        setIsSubmitting(false)
-        toast({
-          title: 'Link created successfully',
-          description: `Your cloaked link is ready: ${data.cloakedUrl}`,
-          status: 'success',
-        })
-        router.push('/dashboard/links')
-      },
-      onError: (error) => {
-        setIsSubmitting(false)
-        toast({
-          title: 'Error creating link',
-          description: error.message || 'Please try again',
-          status: 'error',
-        })
-      },
-    }
-  )
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-    createLink(formData)
+    try {
+      const response = await apiClient.post<any>('/api/links', formData)
+      toast.success('Link created successfully')
+      router.push('/dashboard/links')
+    } catch (error: any) {
+      console.error('Error creating link:', error)
+      toast.error(error.message || 'Failed to create link')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -61,15 +50,16 @@ export default function CreateLinkPage() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSelectChange = (name: string, value: string) => {
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Create New Cloaked Link</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-3xl font-bold text-slate-900">Create New Cloaked Link</h1>
+        <p className="mt-2 text-slate-600">
           Generate a custom cloaked link to protect your affiliate URLs and boost conversions
         </p>
       </div>
@@ -99,7 +89,7 @@ export default function CreateLinkPage() {
                 onChange={handleInputChange}
                 className="w-full"
               />
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-xs text-slate-500">
                 Leave blank for auto-generated slug. Only letters, numbers, and hyphens allowed.
               </p>
             </div>
@@ -111,13 +101,14 @@ export default function CreateLinkPage() {
                 label="Cloaking Type"
                 name="cloakingType"
                 value={formData.cloakingType}
-                onValueChange={(value) => handleSelectChange('cloakingType', value)}
+                onChange={handleSelectChange}
                 className="w-full"
-              >
-                <option value="basic">Basic (URL Masking)</option>
-                <option value="advanced">Advanced (Bot Detection)</option>
-                <option value="smart">Smart (Anti-Shadowban)</option>
-              </Select>
+                options={[
+                  { label: 'Basic (URL Masking)', value: 'basic' },
+                  { label: 'Advanced (Bot Detection)', value: 'advanced' },
+                  { label: 'Smart (Anti-Shadowban)', value: 'smart' },
+                ]}
+              />
             </div>
 
             <div>
@@ -125,13 +116,14 @@ export default function CreateLinkPage() {
                 label="Redirect Type"
                 name="redirectType"
                 value={formData.redirectType}
-                onValueChange={(value) => handleSelectChange('redirectType', value)}
+                onChange={handleSelectChange}
                 className="w-full"
-              >
-                <option value="direct">Direct (Instant)</option>
-                <option value="delayed">Delayed (Countdown)</option>
-                <option value="multi-step">Multi-Step (Landing Page)</option>
-              </Select>
+                options={[
+                  { label: 'Direct (Instant)', value: 'direct' },
+                  { label: 'Delayed (Countdown)', value: 'delayed' },
+                  { label: 'Multi-Step (Landing Page)', value: 'multi-step' },
+                ]}
+              />
             </div>
 
             {formData.redirectType === 'delayed' && (
@@ -162,17 +154,17 @@ export default function CreateLinkPage() {
             />
           </div>
 
-          <div className="flex justify-between items-center">
-            <div>
+          <div className="flex justify-between items-center border-t pt-6">
+            <div className="flex flex-wrap gap-2">
               <Badge variant="secondary">Plan: {user?.plan || 'Starter'}</Badge>
-              <Badge variant="outline" className="ml-2">
-                Max Links: {user?.maxLinks || 10}
+              <Badge variant="outline">
+                Unlimited for your tier
               </Badge>
             </div>
             <div className="flex space-x-3">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => router.push('/dashboard/links')}
               >
                 Cancel
@@ -180,9 +172,9 @@ export default function CreateLinkPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting || !formData.targetUrl}
-                loading={isSubmitting}
+                startIcon={isSubmitting ? <Loader2 className="animate-spin w-4 h-4" /> : null}
               >
-                Create Link
+                {isSubmitting ? 'Creating...' : 'Create Link'}
               </Button>
             </div>
           </div>

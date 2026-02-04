@@ -1,52 +1,47 @@
+"use client"
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useMutation, useQuery } from 'react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
-import { Label } from '@/components/ui/Label'
-import { toast } from '@/hooks/useToast'
-import { api } from '@/lib/api'
+import { useToast } from '@/hooks/useToast'
+import apiClient from '@/lib/api-client'
 import { useAuth } from '@/hooks/useAuth'
-import { Plus, Clock, Star, Link, Zap } from 'lucide-react'
+import { Plus, Clock, Star, Zap, Loader2 } from 'lucide-react'
 
 export default function CreateLandingPage() {
   const router = useRouter()
   const { user } = useAuth()
+  const { success: toastSuccess, error: toastError } = useToast()
+
   const [formData, setFormData] = useState({
     productUrl: '',
     pageTitle: '',
     pageDescription: '',
     timerEnabled: true,
     timerHours: 24,
-    socialProof: 'auto' as const,
-    urgencyLevel: 'medium' as const,
+    socialProof: 'auto' as string,
+    urgencyLevel: 'medium' as string,
   })
 
-  const { data: platforms } = useQuery({
+  const { data: platformsData } = useQuery<any>({
     queryKey: ['platforms'],
-    queryFn: () => api.get('/api/landing-pages/platforms'),
+    queryFn: () => apiClient.get<any>('/api/landing-pages/platforms'),
   })
 
   const createLandingPageMutation = useMutation({
-    mutationFn: (data: typeof formData) => api.post('/api/landing-pages', data),
-    onSuccess: (response) => {
-      toast({
-        title: 'Landing page created successfully',
-        description: 'Your landing page is being generated',
-        status: 'success',
-      })
+    mutationFn: (data: typeof formData) => apiClient.post<any>('/api/landing-pages', data),
+    onSuccess: () => {
+      toastSuccess('Landing page created successfully', 'Your landing page is being generated')
       router.push('/dashboard/landing-pages')
     },
     onError: (error: any) => {
-      toast({
-        title: 'Error creating landing page',
-        description: error?.response?.data?.message || 'Please try again',
-        status: 'error',
-      })
+      toastError('Error creating landing page', error.message || 'Please try again')
     },
   })
 
@@ -55,164 +50,156 @@ export default function CreateLandingPage() {
     createLandingPageMutation.mutate(formData)
   }
 
-  const handleInputChange = (key: keyof typeof formData, value: string | boolean | number) => {
-    setFormData(prev => ({ ...prev, [key]: value }))
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target as any
+    const finalValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    setFormData(prev => ({ ...prev, [name]: finalValue }))
   }
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const platformOptions = [
+    { label: 'Auto-detect from URL', value: 'auto' },
+    ...(platformsData?.platforms?.map((p: string) => ({ label: p, value: p })) || []),
+    { label: 'Manual input', value: 'manual' }
+  ]
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Create New Landing Page</h1>
-        <p className="mt-2 text-gray-600">Generate high-converting micro-landing pages with social proof and urgency timers</p>
+        <h1 className="text-3xl font-bold text-slate-900">Create New Landing Page</h1>
+        <p className="mt-2 text-slate-600">Generate high-converting micro-landing pages with social proof and urgency timers</p>
       </div>
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="productUrl" className="mb-2">
-                Product URL
-              </Label>
-              <Input
-                id="productUrl"
-                type="url"
-                placeholder="https://example.com/product"
-                value={formData.productUrl}
-                onChange={(e) => handleInputChange('productUrl', e.target.value)}
-                required
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                Enter the product page URL to scrape reviews and details
-              </p>
-            </div>
+            <Input
+              label="Product URL"
+              name="productUrl"
+              type="url"
+              placeholder="https://example.com/product"
+              value={formData.productUrl}
+              onChange={handleInputChange}
+              required
+              description="Enter the product page URL to scrape reviews and details"
+            />
 
-            <div>
-              <Label htmlFor="pageTitle" className="mb-2">
-                Page Title
-              </Label>
-              <Input
-                id="pageTitle"
-                placeholder="Best Product Name - Limited Time Offer"
-                value={formData.pageTitle}
-                onChange={(e) => handleInputChange('pageTitle', e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="pageDescription" className="mb-2">
-              Page Description
-            </Label>
-            <Textarea
-              id="pageDescription"
-              placeholder="Limited time offer on Product Name! Get it now before it's gone..."
-              value={formData.pageDescription}
-              onChange={(e) => handleInputChange('pageDescription', e.target.value)}
-              rows={3}
+            <Input
+              label="Page Title"
+              name="pageTitle"
+              placeholder="Best Product Name - Limited Time Offer"
+              value={formData.pageTitle}
+              onChange={handleInputChange}
               required
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <Label htmlFor="socialProof" className="mb-2">
-                Social Proof Source
-              </Label>
-              <Select
-                id="socialProof"
-                value={formData.socialProof}
-                onChange={(e) => handleInputChange('socialProof', e.target.value)}
-                required
-              >
-                <option value="auto">Auto-detect from URL</option>
-                {platforms?.data?.platforms?.map((platform: string) => (
-                  <option key={platform} value={platform}>
-                    {platform}
-                  </option>
-                ))}
-                <option value="manual">Manual input</option>
-              </Select>
-              <p className="mt-1 text-sm text-gray-500">
-                Source for customer reviews and ratings
-              </p>
-            </div>
+          <Textarea
+            label="Page Description"
+            name="pageDescription"
+            placeholder="Limited time offer on Product Name! Get it now before it's gone..."
+            value={formData.pageDescription}
+            onChange={handleInputChange}
+            rows={3}
+            required
+          />
 
-            <div>
-              <Label htmlFor="timerEnabled" className="mb-2 flex items-center justify-between">
-                <span>Enable Timer</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Select
+              label="Social Proof Source"
+              name="socialProof"
+              value={formData.socialProof}
+              onChange={handleSelectChange}
+              options={platformOptions}
+              description="Source for customer reviews and ratings"
+              required
+            />
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700 block">Urgency Timer</label>
+              <div className="flex items-center gap-4 p-2 border rounded-md bg-slate-50">
                 <input
                   id="timerEnabled"
+                  name="timerEnabled"
                   type="checkbox"
                   checked={formData.timerEnabled}
-                  onChange={(e) => handleInputChange('timerEnabled', e.target.checked)}
-                  className="form-checkbox"
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
                 />
-              </Label>
+                <label htmlFor="timerEnabled" className="text-sm text-slate-600 cursor-pointer">
+                  Enable Countdown
+                </label>
+              </div>
               {formData.timerEnabled && (
                 <Select
-                  id="timerHours"
+                  name="timerHours"
                   value={formData.timerHours}
-                  onChange={(e) => handleInputChange('timerHours', parseInt(e.target.value))}
-                >
-                  <option value={6}>6 hours</option>
-                  <option value={12}>12 hours</option>
-                  <option value={24}>24 hours</option>
-                  <option value={48}>48 hours</option>
-                  <option value={72}>72 hours</option>
-                </Select>
+                  onChange={handleSelectChange}
+                  options={[
+                    { label: '6 hours', value: '6' },
+                    { label: '12 hours', value: '12' },
+                    { label: '24 hours', value: '24' },
+                    { label: '48 hours', value: '48' },
+                    { label: '72 hours', value: '72' },
+                  ]}
+                />
               )}
-              <p className="mt-1 text-sm text-gray-500">
-                Create urgency with countdown timer
-              </p>
             </div>
 
-            <div>
-              <Label htmlFor="urgencyLevel" className="mb-2">
-                Urgency Level
-              </Label>
-              <Select
-                id="urgencyLevel"
-                value={formData.urgencyLevel}
-                onChange={(e) => handleInputChange('urgencyLevel', e.target.value)}
-              >
-                <option value="low">Low - Gentle reminder</option>
-                <option value="medium">Medium - Standard urgency</option>
-                <option value="high">High - Strong urgency</option>
-              </Select>
-              <p className="mt-1 text-sm text-gray-500">
-                Set the intensity of urgency messaging
-              </p>
-            </div>
+            <Select
+              label="Urgency Level"
+              name="urgencyLevel"
+              value={formData.urgencyLevel}
+              onChange={handleSelectChange}
+              options={[
+                { label: 'Low - Gentle reminder', value: 'low' },
+                { label: 'Medium - Standard urgency', value: 'medium' },
+                { label: 'High - Strong urgency', value: 'high' },
+              ]}
+              description="Set the intensity of urgency messaging"
+            />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between border-t pt-6">
             <div className="flex items-center space-x-3">
-              <Badge variant="default">
-                <Clock className="w-4 h-4 mr-1" />
-                {formData.timerEnabled ? `${formData.timerHours}h` : 'Disabled'}
+              <Badge variant="secondary" className="flex items-center">
+                <Clock className="w-3 h-3 mr-1" />
+                {formData.timerEnabled ? `${formData.timerHours}h` : 'No Timer'}
               </Badge>
-              <Badge variant="default">
-                <Star className="w-4 h-4 mr-1" />
+              <Badge variant="secondary" className="flex items-center">
+                <Star className="w-3 h-3 mr-1" />
                 {formData.socialProof}
               </Badge>
-              <Badge variant="default">
-                <Zap className="w-4 h-4 mr-1" />
+              <Badge variant="secondary" className="flex items-center">
+                <Zap className="w-3 h-3 mr-1" />
                 {formData.urgencyLevel}
               </Badge>
             </div>
-            <Button 
-              type="submit" 
-              disabled={createLandingPageMutation.isLoading}
-              className="flex items-center space-x-2"
-            >
-              {createLandingPageMutation.isLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900" />
-              ) : (
-                <Plus className="w-4 h-4" />
-              )}
-              Create Landing Page
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => router.push('/dashboard/landing-pages')}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createLandingPageMutation.isPending}
+                className="text-white"
+              >
+                {createLandingPageMutation.isPending ? (
+                  <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
+                Create Landing Page
+              </Button>
+            </div>
           </div>
         </form>
       </Card>

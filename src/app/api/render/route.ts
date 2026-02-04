@@ -1,31 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { redisClient } from '@/lib/redis/client'
-import { v4 as uuidv4 } from 'uuid'
+export const dynamic = 'force-dynamic'
+import { db } from '@/lib/db'
+import { render_jobs } from '@/lib/db/schema'
+import { eq, desc } from 'drizzle-orm'
+import { getRedisClient } from '@/lib/redis/client'
 import { z } from 'zod'
 import { authOptions } from '@/lib/auth/authOptions'
-import { NextAuth } from 'next-auth'
-import { NextAuthOptions } from 'next-auth/internals'
 import { getServerSession } from 'next-auth'
-import { logger } from '@/lib/utils'
-import { ReadableStream } from 'stream/web'
-import { Blob } from 'buffer'
+import { logger } from '@/lib/utils/logger'
 
 const renderJobSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   description: z.string().optional(),
-  templateId: z.string().optional(),
-})
-
-const fileSchema = z.object({
-  videoFile: z.instanceof(ReadableStream).refine(
-    (stream) => stream instanceof ReadableStream,
-    'Valid video file required'
-  ),
+  input_url: z.string().url('Valid input URL is required'),
 })
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions as NextAuthOptions)
+  const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json(
       { error: 'Authentication required' },
@@ -34,63 +25,40 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const formData = await request.formData()
+    const body = await request.json()
+    const parsed = renderJobSchema.parse(body)
 
-    // Validate job metadata
-    const parsed = renderJobSchema.parse({
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      templateId: formData.get('templateId') as string,
-    })
-
-    // Validate file separately
-    fileSchema.parse({
-      videoFile: formData.get('videoFile') as ReadableStream,
-    })
-
-    const userId = session.user.id
-    const jobId = uuidv4()
+    const userId = parseInt(session.user.id)
 
     // Save job to database
-    const renderJob = await prisma.renderJob.create({
-      data: {
-        id: jobId,
-        userId,
+    const [renderJob] = await db
+      .insert(render_jobs)
+      .values({
+        user_id: userId,
         title: parsed.title,
         description: parsed.description,
-        status: 'queued',
-        templateId: parsed.templateId,
-      },
-    })
-
-    // Convert ReadableStream to Blob for Redis storage
-    const videoFile = formData.get('videoFile') as ReadableStream
-    const chunks: Uint8Array[] = []
-    for await (const chunk of videoFile) {
-      chunks.push(new Uint8Array(await chunk.arrayBuffer()))
-    }
-    const blob = new Blob(chunks)
+        input_url: parsed.input_url,
+        status: 'pending',
+      })
+      .returning()
 
     // Queue job in Redis
+    const redis = getRedisClient()
     const jobPayload = {
-      id: jobId,
-      userId,
-      title: parsed.title,
-      videoFile: blob,
-      templateId: parsed.templateId,
+      id: renderJob.id,
+      user_id: userId,
+      input_url: parsed.input_url,
+      status: 'pending',
+      progress: 0,
+      retries: 0
     }
 
-    await redisClient.rpush('render_jobs', JSON.stringify(jobPayload))
+    await redis.rpush('render_jobs', JSON.stringify(jobPayload))
 
     return NextResponse.json(
       {
         success: true,
-        job: {
-          id: renderJob.id,
-          title: renderJob.title,
-          status: renderJob.status,
-          createdAt: renderJob.createdAt.toISOString(),
-        },
+        job: renderJob,
       },
       { status: 201 }
     )
@@ -110,7 +78,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions as NextAuthOptions)
+  const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json(
       { error: 'Authentication required' },
@@ -119,24 +87,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const userId = session.user.id
-    const jobs = await prisma.renderJob.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-    })
+    const userId = parseInt(session.user.id)
+    const jobs = await db
+      .select()
+      .from(render_jobs)
+      .where(eq(render_jobs.user_id, userId))
+      .orderBy(desc(render_jobs.created_at))
 
     return NextResponse.json(
       {
         success: true,
-        jobs: jobs.map((job) => ({
-          id: job.id,
-          title: job.title,
-          description: job.description,
-          status: job.status,
-          progress: job.progress,
-          outputUrl: job.outputUrl,
-          createdAt: job.createdAt.toISOString(),
-        })),
+        jobs,
       },
       { status: 200 }
     )

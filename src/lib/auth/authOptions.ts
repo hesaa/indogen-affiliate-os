@@ -1,8 +1,39 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { TikTokProvider } from 'next-auth/providers'
-import { prisma } from '@/lib/db'
+import { db } from '@/lib/db'
+import { users } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 import { NextAuthOptions } from 'next-auth'
+
+// Extend the built-in session types
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string
+      email: string
+      role: string
+      plan: string
+    }
+  }
+
+  interface User {
+    id: string
+    email: string
+    role: string
+    plan: string
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    user?: {
+      id: string
+      email: string
+      role: string
+      plan: string
+    }
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,82 +49,72 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        })
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, credentials.email))
+          .limit(1)
 
-        if (!user || user.password !== credentials.password) {
+        if (!user) {
+          return null
+        }
+
+        const { comparePassword } = await import('@/lib/auth')
+        const isPasswordValid = await comparePassword(credentials.password, user.password_hash)
+
+        if (!isPasswordValid) {
           return null
         }
 
         return {
-          id: user.id,
+          id: user.id.toString(),
           email: user.email,
-          name: user.name,
-          role: user.role,
-          plan: user.plan
+          role: user.role || 'user',
+          plan: user.plan || 'starter'
         }
       }
     }),
 
-    // TikTok OAuth for comment sniper
-    TikTokProvider({
-      clientId: process.env.TIKTOK_CLIENT_ID!,
-      clientSecret: process.env.TIKTOK_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          scope: 'user.read.basic,user.read.email'
-        }
-      }
-    }),
-
-    // Instagram OAuth for comment sniper
-    // Note: Instagram requires Meta App setup with Facebook Login
-    // This is a placeholder - actual implementation may vary
-    {
-      id: 'instagram',
-      name: 'Instagram',
-      type: 'oauth',
-      version: '2.0',
-      scope: 'user_profile,user_media',
-      params: { grant_type: 'authorization_code' },
-      accessTokenUrl: 'https://graph.instagram.com/oauth/access_token',
-      authorizationUrl: 'https://www.instagram.com/accounts/oauth/authorize/',
-      profileUrl: 'https://graph.instagram.com/me',
-      clientId: process.env.INSTAGRAM_CLIENT_ID!,
-      clientSecret: process.env.INSTAGRAM_CLIENT_SECRET!,
-      profile(profile) {
-        return {
-          id: profile.id,
-          name: profile.username,
-          email: profile.email
-        }
-      }
-    }
+    // TODO: Add OAuth providers when needed
+    // Example: TikTok, Instagram, etc.
   ],
 
   callbacks: {
     // Create user if they don't exist (first-time OAuth login)
     async signIn({ user, account, profile }) {
       if (account?.type === 'oauth') {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email }
-        })
+        const [existingUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, user.email!))
+          .limit(1)
 
         if (!existingUser) {
-          const createdUser = await prisma.user.create({
-            data: {
-              email: user.email!,
-              name: user.name || user.email!,
-              role: 'user',
-              plan: 'Starter'
-            }
+          // Create new user with default password
+          // TODO: Generate a secure random password
+          await db.insert(users).values({
+            email: user.email!,
+            password_hash: Math.random().toString(36),
+            role: 'user',
+            plan: 'starter'
           })
-          return createdUser
         }
       }
 
       return true
+    },
+
+    // Add user data to JWT token
+    async jwt({ token, user }) {
+      if (user) {
+        token.user = {
+          id: user.id,
+          email: user.email!,
+          role: user.role,
+          plan: user.plan
+        }
+      }
+      return token
     },
 
     // Add user data to session
@@ -101,7 +122,6 @@ export const authOptions: NextAuthOptions = {
       if (token?.user) {
         session.user = {
           id: token.user.id,
-          name: token.user.name,
           email: token.user.email,
           role: token.user.role,
           plan: token.user.plan
@@ -110,11 +130,6 @@ export const authOptions: NextAuthOptions = {
       return session
     }
   },
-
-  // Database adapter for NextAuth
-  adapter: NextAuth.adapters.prisma({
-    prisma: prisma
-  }),
 
   // Session configuration
   session: {
@@ -129,7 +144,6 @@ export const authOptions: NextAuthOptions = {
   // Pages configuration
   pages: {
     signIn: '/auth/login',
-    signUp: '/auth/register'
   },
 
   // Debug mode

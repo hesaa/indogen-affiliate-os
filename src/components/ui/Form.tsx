@@ -1,4 +1,4 @@
-import { useState, useEffect, ChangeEvent, FormEvent } from 'react'
+import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from './Button'
 import { Input } from './Input'
@@ -50,7 +50,7 @@ export function Form({
     setTouched(prev => ({ ...prev, [name]: true }))
 
     if (fields.find(field => field.name === name)?.validation) {
-      const error = fields.find(field => field.name === name)?.validation?.(value) || null
+      const error = fields.find(field => field.name === name)?.validation?.(value) || ''
       setErrors(prev => ({ ...prev, [name]: error }))
     }
   }
@@ -112,7 +112,7 @@ export function Form({
                 id={field.name}
                 name={field.name}
                 value={value}
-                onChange={handleChange}
+                onChange={(val) => handleChange({ target: { name: field.name, value: val } } as any)}
                 placeholder={field.placeholder}
                 disabled={disabled}
                 className={cn(hasError && 'border-red-500', 'w-full')}
@@ -124,17 +124,11 @@ export function Form({
                 id={field.name}
                 name={field.name}
                 value={value}
-                onChange={handleChange}
+                onChange={(val) => handleChange({ target: { name: field.name, value: String(val) } } as any)}
                 disabled={disabled}
                 className={cn(hasError && 'border-red-500', 'w-full')}
-              >
-                {!field.required && <option value="">Select...</option>}
-                {field.options?.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
+                options={field.options || []}
+              />
             )}
 
             {(field.type === 'text' || field.type === 'email' || field.type === 'password' || !field.type) && (

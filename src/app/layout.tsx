@@ -7,6 +7,8 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 
+import ReactQueryProvider from "@/components/providers/ReactQueryProvider";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -28,9 +30,11 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <AuthProvider>
-              {children}
-            </AuthProvider>
+            <ReactQueryProvider>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </ReactQueryProvider>
           </ThemeProvider>
         </SessionProvider>
       </body>

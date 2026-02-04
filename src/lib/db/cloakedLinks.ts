@@ -1,16 +1,13 @@
-import { pgTable, serial, text, timestamp, integer, boolean, enumType } from 'drizzle-orm/pg-core';
-import { users } from './users'; // Added missing import
+import { pgTable, serial, text, timestamp, integer, boolean, pgEnum } from 'drizzle-orm/pg-core';
+import { users } from './schema';
 
-export const cloakedLinkStatus = enumType({
-  name: 'cloaked_link_status',
-  values: ['active', 'inactive', 'suspended'] as const,
-});
+export const cloakedLinkStatus = pgEnum('cloaked_link_status', ['active', 'inactive', 'suspended']);
 
 export const cloakedLinks = pgTable('cloaked_links', {
   id: serial('id').primaryKey(),
   user_id: integer('user_id').notNull().references(() => users.id, {
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE',
+    onDelete: 'cascade',
+    onUpdate: 'cascade',
   }),
   slug: text('slug').notNull().unique(),
   destination_url: text('destination_url').notNull(),
@@ -28,21 +25,5 @@ export const cloakedLinks = pgTable('cloaked_links', {
   updated_at: timestamp('updated_at').defaultNow(),
 });
 
-export type CloakedLink = {
-  id: number;
-  user_id: number;
-  slug: string;
-  destination_url: string;
-  cloaked_url: string;
-  title?: string;
-  description?: string;
-  image_url?: string;
-  click_count: number;
-  unique_clicks: number;
-  bot_click_count: number;
-  status: 'active' | 'inactive' | 'suspended';
-  is_safe_page: boolean;
-  safe_page_html?: string;
-  created_at: Date;
-  updated_at: Date;
-};
+export type CloakedLink = typeof cloakedLinks.$inferSelect;
+export type NewCloakedLink = typeof cloakedLinks.$inferInsert;

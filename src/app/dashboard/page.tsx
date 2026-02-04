@@ -1,14 +1,15 @@
+"use client"
+
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { DashboardLayout } from './layout'
 import { useAuth } from '@/hooks/useAuth'
 import { Clock, Film, MessageSquare, Link, TrendingUp, Users, Zap } from 'lucide-react'
 import { RenderJobCard } from '@/components/dashboard/RenderJobCard'
 import { LinkStat } from '@/components/dashboard/LinkStat'
 
 export default function DashboardPage() {
-  const { user, plan } = useAuth()
+  const { user } = useAuth()
   const [recentJobs, setRecentJobs] = useState<any[]>([])
   const [topLinks, setTopLinks] = useState<any[]>([])
 
@@ -59,7 +60,7 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900">
-            Welcome back, {user?.name}!
+            Welcome back, {user?.name || 'User'}!
           </h1>
           <p className="mt-2 text-slate-600">
             Manage your affiliate marketing tools and track performance
@@ -69,62 +70,62 @@ export default function DashboardPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="bg-white">
-            <CardHeader className="flex items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-slate-600">
                 Render Jobs
               </CardTitle>
               <Clock className="h-4 w-4 text-slate-400" />
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-slate-900">{stats.renderJobs}</p>
-              <CardDescription className="text-xs text-slate-500">
+              <div className="text-2xl font-bold text-slate-900">{stats.renderJobs}</div>
+              <p className="text-xs text-slate-500">
                 Active jobs in queue
-              </CardDescription>
+              </p>
             </CardContent>
           </Card>
 
           <Card className="bg-white">
-            <CardHeader className="flex items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-slate-600">
                 Cloaked Links
               </CardTitle>
               <Link className="h-4 w-4 text-slate-400" />
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-slate-900">{stats.cloakedLinks}</p>
-              <CardDescription className="text-xs text-slate-500">
+              <div className="text-2xl font-bold text-slate-900">{stats.cloakedLinks}</div>
+              <p className="text-xs text-slate-500">
                 Links created
-              </CardDescription>
+              </p>
             </CardContent>
           </Card>
 
           <Card className="bg-white">
-            <CardHeader className="flex items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-slate-600">
                 Comment Triggers
               </CardTitle>
               <MessageSquare className="h-4 w-4 text-slate-400" />
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-slate-900">{stats.commentTriggers}</p>
-              <CardDescription className="text-xs text-slate-500">
+              <div className="text-2xl font-bold text-slate-900">{stats.commentTriggers}</div>
+              <p className="text-xs text-slate-500">
                 Active triggers
-              </CardDescription>
+              </p>
             </CardContent>
           </Card>
 
           <Card className="bg-white">
-            <CardHeader className="flex items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-slate-600">
                 Landing Pages
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-slate-400" />
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-slate-900">{stats.landingPages}</p>
-              <CardDescription className="text-xs text-slate-500">
+              <div className="text-2xl font-bold text-slate-900">{stats.landingPages}</div>
+              <p className="text-xs text-slate-500">
                 Pages generated
-              </CardDescription>
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -133,18 +134,18 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4">
           {quickActions.map((action, index) => (
             <Card key={index} className="bg-white hover:shadow-lg transition-shadow">
-              <CardHeader className="flex items-center justify-between mb-3">
+              <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <CardTitle className="text-sm font-medium text-slate-600">
                   {action.title}
                 </CardTitle>
                 <action.icon className="h-4 w-4 text-slate-400" />
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-500 mb-3">{action.description}</p>
-                <Button 
+                <p className="text-sm text-slate-500 mb-4">{action.description}</p>
+                <Button
                   asChild
                   size="sm"
-                  className={`${action.color} hover:bg-opacity-90 transition-colors`}
+                  className={`${action.color} hover:bg-opacity-90 transition-colors text-white border-0`}
                 >
                   <a href={action.href}>Go to {action.title}</a>
                 </Button>
@@ -191,7 +192,15 @@ export default function DashboardPage() {
                 <p className="text-sm text-slate-400">No cloaked links yet</p>
               ) : (
                 topLinks.slice(0, 3).map((link: any, index: number) => (
-                  <LinkStat key={index} link={link} />
+                  <LinkStat
+                    key={index}
+                    slug={link.slug}
+                    clicks={link.clicks}
+                    conversions={link.conversions}
+                    conversionRate={link.conversionRate}
+                    createdAt={link.createdAt}
+                    onCopy={() => { }}
+                  />
                 ))
               )}
             </CardContent>
@@ -201,7 +210,7 @@ export default function DashboardPage() {
           <Card className="bg-white">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-slate-600">
-                Your Plan: {plan?.name || 'Starter'}
+                Your Plan: {user?.plan || 'Starter'}
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">
                 Features included
@@ -210,19 +219,19 @@ export default function DashboardPage() {
             <CardContent className="space-y-3">
               <div className="flex items-center text-sm text-slate-600">
                 <Zap className="h-4 w-4 mr-2 text-yellow-500" />
-                {plan?.maxRenderJobs || 5} concurrent render jobs
+                Limited concurrent render jobs
               </div>
               <div className="flex items-center text-sm text-slate-600">
                 <Users className="h-4 w-4 mr-2 text-yellow-500" />
-                {plan?.maxCloakedLinks || 10} cloaked links
+                Active cloaked links
               </div>
               <div className="flex items-center text-sm text-slate-600">
                 <MessageSquare className="h-4 w-4 mr-2 text-yellow-500" />
                 Unlimited comment triggers
               </div>
-              <Button 
-                size="sm" 
-                className="w-full bg-blue-500 hover:bg-blue-600"
+              <Button
+                size="sm"
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white"
               >
                 Upgrade Plan
               </Button>
@@ -233,5 +242,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-
-DashboardPage.Layout = DashboardLayout

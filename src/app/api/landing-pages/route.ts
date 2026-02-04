@@ -1,33 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { authOptions } from '@/lib/auth/authOptions'
-import { getServerSession } from 'next-auth'
+export const dynamic = 'force-dynamic'
+import { db } from '@/lib/db'
+import { landing_pages } from '@/lib/db/schema'
+import { auth } from '@/lib/auth'
+import { eq, desc } from 'drizzle-orm'
+import { z } from 'zod'
+
+// Schema for creating landing pages
+const CreateLandingPageSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(100),
+  description: z.string().optional(),
+  product_url: z.string().url('Must be a valid URL'),
+  social_proof: z.any().optional(), // JSONB field for reviews/ratings
+  urgency_timer: z.number().int().positive().optional(),
+  custom_css: z.string().optional(),
+})
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const session = await auth()
+    console.log('API landing-pages session:', !!session)
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized', debug: 'No session' }, { status: 401 })
     }
 
-    const landingPages = await prisma.landing_page.findMany({
-      where: { user_id: session.user.id },
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        product_url: true,
-        created_at: true,
-        updated_at: true,
-      },
-      orderBy: { created_at: 'desc' },
-    })
+    const userId = parseInt(session.user.id)
+    const landingPagesList = await db
+      .select()
+      .from(landing_pages)
+      .where(eq(landing_pages.user_id, userId))
+      .orderBy(desc(landing_pages.created_at))
 
-    return NextResponse.json({ landingPages })
-  } catch (error) {
+    return NextResponse.json({ landingPages: landingPagesList })
+  } catch (error: any) {
     console.error('Error fetching landing pages:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', message: error.message },
       { status: 500 }
     )
   }
@@ -35,58 +44,76 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const session = await auth()
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const userId = parseInt(session.user.id)
     const body = await request.json()
-    const { title, product_url, reviews, timer_duration } = body
 
-    // Validate required fields
-    if (!title || !product_url) {
-      return NextResponse.json(
-        { error: 'Title and product URL are required' },
-        { status: 400 }
-      )
-    }
+    // Validate request body
+    const parsed = CreateLandingPageSchema.parse(body)
 
-    // Generate unique slug
-    const baseSlug = title
+    // Generate unique slug from title
+    const baseSlug = parsed.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '')
+
     let slug = baseSlug
     let counter = 1
 
-    while (await prisma.landing_page.findUnique({ where: { slug } })) {
+    // Check if slug exists and generate unique one
+    while (true) {
+      const [existing] = await db
+        .select({ id: landing_pages.id })
+        .from(landing_pages)
+        .where(eq(landing_pages.slug, slug))
+        .limit(1)
+
+      if (!existing) break
+
       slug = `${baseSlug}-${counter}`
       counter++
     }
 
-    const landingPage = await prisma.landing_page.create({
-      data: {
-        user_id: session.user.id,
+    // Create landing page
+    const [landingPage] = await db
+      .insert(landing_pages)
+      .values({
+        user_id: userId,
         slug,
-        title,
-        product_url,
-        reviews: reviews || [],
-        timer_duration: timer_duration || null,
-      },
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        product_url: true,
-        reviews: true,
-        timer_duration: true,
-        created_at: true,
-        updated_at: true,
-      },
-    })
+        title: parsed.title,
+        description: parsed.description || null,
+        product_url: parsed.product_url,
+        social_proof: parsed.social_proof || null,
+        urgency_timer: parsed.urgency_timer || null,
+        custom_css: parsed.custom_css || null,
+        is_active: true,
+      })
+      .returning({
+        id: landing_pages.id,
+        slug: landing_pages.slug,
+        title: landing_pages.title,
+        description: landing_pages.description,
+        product_url: landing_pages.product_url,
+        social_proof: landing_pages.social_proof,
+        urgency_timer: landing_pages.urgency_timer,
+        custom_css: landing_pages.custom_css,
+        is_active: landing_pages.is_active,
+        created_at: landing_pages.created_at,
+        updated_at: landing_pages.updated_at,
+      })
 
     return NextResponse.json({ landingPage }, { status: 201 })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.issues[0].message },
+        { status: 400 }
+      )
+    }
     console.error('Error creating landing page:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -1,8 +1,56 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './useAuth';
-import { apiClient } from '@/lib/api-client';
+import apiClient from '@/lib/api-client';
 import { RenderJob, UploadProgress } from '@/types';
+
+export function useRenderJobs() {
+  const [jobs, setJobs] = useState<RenderJob[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchJobs = async () => {
+    setIsLoading(true)
+    try {
+      const response = await apiClient.get<RenderJob[]>('/api/render')
+      // If response is { success: true, jobs: [] }
+      if (response && (response as any).jobs) {
+        setJobs((response as any).jobs)
+      } else if (Array.isArray(response)) {
+        setJobs(response)
+      }
+      setError(null)
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch jobs')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const deleteJob = async (id: string) => {
+    try {
+      await apiClient.delete(`/api/render/${id}`)
+      setJobs(prev => prev.filter(j => j.id !== id))
+    } catch (err: any) {
+      throw new Error(err.message || 'Failed to delete job')
+    }
+  }
+
+  const createJob = async (data: any) => {
+    try {
+      await apiClient.post('/api/render', data)
+      await fetchJobs()
+    } catch (err: any) {
+      throw new Error(err.message || 'Failed to create job')
+    }
+  }
+
+  useEffect(() => {
+    fetchJobs()
+  }, [])
+
+  return { jobs, isLoading, error, refresh: fetchJobs, deleteJob, createJob }
+}
 
 export function useRenderJob(jobId?: string) {
   const { user } = useAuth();
@@ -21,12 +69,10 @@ export function useRenderJob(jobId?: string) {
 
     const poll = async () => {
       try {
-        const response = await apiClient.get(`/api/render/${jobId}`, {
-          signal: controller.signal,
-        });
-        setJob(response.data);
+        const response = await apiClient.get<RenderJob>(`/api/render/${jobId}`);
+        setJob(response as RenderJob);
 
-        if (response.data.status === 'completed' || response.data.status === 'failed') {
+        if ((response as any).status === 'completed' || (response as any).status === 'failed') {
           clearInterval(pollRef.current!);
           setIsPolling(false);
         }
@@ -58,19 +104,11 @@ export function useRenderJob(jobId?: string) {
       formData.append('file', file);
       formData.append('userId', user.id);
 
-      const response = await apiClient.post('/api/render', formData, {
-        onUploadProgress: (progress) => {
-          setUploadProgress({
-            loaded: progress.loaded,
-            total: progress.total,
-            percent: Math.round((progress.loaded / progress.total) * 100),
-          });
-        },
-      });
+      const response = await apiClient.post<RenderJob>('/api/render', formData as any);
 
-      setJob(response.data);
+      setJob(response as RenderJob);
       startPolling();
-      return response.data;
+      return response;
     } catch (error) {
       console.error('Upload error:', error);
       setError('Failed to upload file');
@@ -82,10 +120,10 @@ export function useRenderJob(jobId?: string) {
     if (!jobId || !user?.id) return null;
 
     try {
-      const response = await apiClient.post(`/api/render/${jobId}/retry`);
-      setJob(response.data);
+      const response = await apiClient.post<RenderJob>(`/api/render/${jobId}/retry`);
+      setJob(response as RenderJob);
       startPolling();
-      return response.data;
+      return response;
     } catch (error) {
       console.error('Retry error:', error);
       setError('Failed to retry job');
@@ -109,15 +147,33 @@ export function useRenderJob(jobId?: string) {
     }
   };
 
+  const fetchJob = async () => {
+    if (!jobId) return;
+    try {
+      const response = await apiClient.get<RenderJob>(`/api/render/${jobId}`);
+      if (response && (response as any).job) {
+        setJob((response as any).job);
+      } else {
+        setJob(response as RenderJob);
+      }
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch job');
+    }
+  };
+
   useEffect(() => {
     if (jobId) {
-      startPolling();
+      fetchJob();
     }
+  }, [jobId]);
 
-    return () => {
-      stopPolling();
-    };
-  }, [jobId, user?.id]);
+  useEffect(() => {
+    if (isPolling && jobId) {
+      const interval = setInterval(fetchJob, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [isPolling, jobId]);
 
   return {
     job,
@@ -129,5 +185,6 @@ export function useRenderJob(jobId?: string) {
     cancelJob,
     startPolling,
     stopPolling,
+    refetch: fetchJob
   };
 }

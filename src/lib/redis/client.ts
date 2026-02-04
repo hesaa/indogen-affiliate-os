@@ -11,14 +11,13 @@ export const getRedisClient = (): Redis => {
 
     redisClient = new Redis(redisUrl, {
       maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
       enableOfflineQueue: true,
       lazyConnect: true,
       enableReadyCheck: true,
     })
 
     // Handle connection errors
-    redisClient.on('error', (err) => {
+    redisClient.on('error', (err: Error) => {
       console.error('Redis client error:', err)
     })
 

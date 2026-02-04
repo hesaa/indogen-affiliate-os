@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { cn } from '@/lib/utils'
-import { Check, ChevronDown } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 
 export interface SelectOption {
   label: string
@@ -13,29 +13,11 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
   label?: string
   description?: string
   error?: string
-  className?: string
   placeholder?: string
-  value?: string | number
-  defaultValue?: string | number
-  onChange?: (value: string | number) => void
 }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, label, description, error, options, placeholder, value, defaultValue, onChange, ...props }, ref) => {
-    const [internalValue, setInternalValue] = useState<string | number | undefined>(value ?? defaultValue)
-
-    useEffect(() => {
-      if (value !== undefined && internalValue !== value) {
-        setInternalValue(value)
-      }
-    }, [value])
-
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const selectedValue = e.target.value
-      setInternalValue(selectedValue)
-      onChange?.(selectedValue)
-    }
-
+  ({ className, label, description, error, options, placeholder, value, defaultValue, ...props }, ref) => {
     return (
       <div className={cn('space-y-2', className)}>
         {label && (
@@ -46,17 +28,17 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         <div className="relative">
           <select
             ref={ref}
-            value={internalValue}
-            onChange={handleChange}
+            value={value}
+            defaultValue={defaultValue}
             className={cn(
-              'appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+              'w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
               error && 'border-error',
               className
             )}
             {...props}
           >
             {placeholder && (
-              <option value="" disabled hidden>
+              <option value="" disabled>
                 {placeholder}
               </option>
             )}

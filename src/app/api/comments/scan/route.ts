@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { redisClient } from '@/lib/redis/client';
+import { db } from '@/lib/db';
+import { social_accounts } from '@/lib/db/schema';
+import { eq, and } from 'drizzle-orm';
+import { getRedisClient } from '@/lib/redis/client';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
 
 // Schema for request body validation
 const ScanRequestSchema = z.object({
@@ -11,27 +15,29 @@ const ScanRequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: 'Authentication required' },
+      { status: 401 }
+    );
+  }
+
   try {
-    // Validate request body
+    const userId = parseInt(session.user.id)
     const body = await request.json();
     const parsed = ScanRequestSchema.parse(body);
 
-    // Get authenticated user from request
-    const user = request.auth?.user;
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
     // Fetch user's connected social accounts
-    const connectedAccounts = await prisma.socialAccount.findMany({
-      where: {
-        userId: user.id,
-        isActive: true,
-      },
-    });
+    const connectedAccounts = await db
+      .select()
+      .from(social_accounts)
+      .where(
+        and(
+          eq(social_accounts.user_id, userId),
+          eq(social_accounts.is_active, true)
+        )
+      );
 
     if (connectedAccounts.length === 0) {
       return NextResponse.json(
@@ -43,8 +49,8 @@ export async function POST(request: NextRequest) {
     // Filter accounts by requested platforms (if specified)
     const accountsToScan = parsed.platforms
       ? connectedAccounts.filter(account =>
-          parsed.platforms.includes(account.platform as 'tiktok' | 'instagram')
-        )
+        parsed.platforms!.includes(account.platform as 'tiktok' | 'instagram')
+      )
       : connectedAccounts;
 
     if (accountsToScan.length === 0) {
@@ -60,11 +66,11 @@ export async function POST(request: NextRequest) {
     // Prepare scan job payload
     const scanJob = {
       id: jobId,
-      userId: user.id,
+      userId: userId,
       accounts: accountsToScan.map(account => ({
         id: account.id,
         platform: account.platform,
-        accessToken: account.accessToken,
+        accessToken: account.access_token,
         username: account.username,
       })),
       keywords: parsed.keywords || [],
@@ -73,7 +79,8 @@ export async function POST(request: NextRequest) {
     };
 
     // Queue the scan job in Redis
-    await redisClient.rpush(
+    const redis = getRedisClient()
+    await redis.rpush(
       'comment_scan_jobs',
       JSON.stringify(scanJob)
     );
@@ -85,6 +92,12 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Comment scan error:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.issues[0]?.message || 'Invalid input' },
+        { status: 400 }
+      )
+    }
     return NextResponse.json(
       { error: 'Failed to queue comment scan job' },
       { status: 500 }

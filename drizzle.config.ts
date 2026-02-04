@@ -1,11 +1,10 @@
-import { drizzle } from 'drizzle-orm'
-import { drizzleConfig } from 'drizzle-kit'
+import { defineConfig } from 'drizzle-kit'
 
-export default drizzleConfig({
+export default defineConfig({
   schema: './src/lib/db/schema.ts',
-  out: './src/lib/db',
-  dialect: drizzle.PostgresDialect,
-  emit: ['typings'],
-  schemaOutput: './src/lib/db/schema.ts',
-  schemaTypings: './src/lib/db/schema.ts',
+  out: './src/lib/db/migrations',
+  dialect: "postgresql",
+  dbCredentials: {
+    url: process.env.DATABASE_URL!,
+  },
 })

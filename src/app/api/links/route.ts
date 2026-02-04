@@ -1,42 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+export const dynamic = 'force-dynamic'
+import { db } from '@/lib/db'
+import { cloaked_links } from '@/lib/db/schema'
+import { eq, and, or, desc } from 'drizzle-orm'
 import { authOptions } from '@/lib/auth/authOptions'
 import { getServerSession } from 'next-auth'
-import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
 
 const linkSchema = z.object({
   targetUrl: z.string().url().min(1, 'Target URL is required'),
   slug: z.string().optional(),
+  title: z.string().optional(),
 })
 
-type LinkBody = z.infer<typeof linkSchema>
-
 export async function GET() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const userId = parseInt(session.user.id)
+    const links = await db
+      .select()
+      .from(cloaked_links)
+      .where(eq(cloaked_links.user_id, userId))
+      .orderBy(desc(cloaked_links.created_at))
 
-    const links = await prisma.cloakedLink.findMany({
-      where: { userId: session.user.id },
-      include: {
-        clicks: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    })
-
-    const formattedLinks = links.map(link => ({
-      id: link.id,
-      slug: link.slug,
-      targetUrl: link.targetUrl,
-      createdAt: link.createdAt,
-      clickCount: link.clicks.length,
-      lastClickedAt: link.clicks.length > 0 ? link.clicks[link.clicks.length - 1].createdAt : null,
-    }))
-
-    return NextResponse.json(formattedLinks)
+    return NextResponse.json(links)
   } catch (error) {
     console.error('Error fetching links:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -44,52 +35,54 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const userId = parseInt(session.user.id)
+    const body = await request.json()
+    const parsed = linkSchema.parse(body)
+
+    const { targetUrl, slug, title } = parsed
+
+    // Check if slug already exists
+    if (slug) {
+      const [existingSlug] = await db
+        .select()
+        .from(cloaked_links)
+        .where(eq(cloaked_links.slug, slug))
+        .limit(1)
+
+      if (existingSlug) {
+        return NextResponse.json({ error: 'Slug already in use' }, { status: 409 })
+      }
     }
 
-    let body: LinkBody
-    try {
-      body = linkSchema.parse(await request.json())
-    } catch (error) {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
-    }
+    const finalSlug = slug || generateSlug()
 
-    const { targetUrl, slug } = body
+    const [link] = await db
+      .insert(cloaked_links)
+      .values({
+        user_id: userId,
+        slug: finalSlug,
+        original_url: targetUrl,
+        title: title || finalSlug,
+        cloaked_url: `/api/redirect/${finalSlug}`,
+        is_active: true,
+      })
+      .returning()
 
-    const existingLink = await prisma.cloakedLink.findFirst({
-      where: {
-        OR: [
-          { slug },
-          { targetUrl, userId: session.user.id },
-        ],
-      },
-    })
-
-    if (existingLink) {
-      return NextResponse.json({ error: 'Link with this slug or target URL already exists' }, { status: 409 })
-    }
-
-    const linkSlug = slug || generateSlug()
-
-    const link = await prisma.cloakedLink.create({
-      data: {
-        slug: linkSlug,
-        targetUrl,
-        userId: session.user.id,
-      },
-    })
-
-    return NextResponse.json({
-      id: link.id,
-      slug: link.slug,
-      targetUrl: link.targetUrl,
-      createdAt: link.createdAt,
-    }, { status: 201 })
+    return NextResponse.json(link, { status: 201 })
   } catch (error) {
     console.error('Error creating link:', error)
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.issues[0]?.message || 'Invalid input' },
+        { status: 400 }
+      )
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

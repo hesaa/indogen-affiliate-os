@@ -75,7 +75,7 @@ export function validateRenderJobPayload(
   } catch (error) {
     return {
       valid: false,
-      error: error instanceof z.ZodError ? error.errors[0].message : 'Invalid payload',
+      error: error instanceof z.ZodError ? error.issues[0].message : 'Invalid payload',
     };
   }
 }

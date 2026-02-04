@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { useRenderJob } from '@/hooks/useRenderJob'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { VideoCamera, Download, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Video, Download, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function RenderJobPage() {
   const router = useRouter()
-  const { id } = router.params
+  const params = useParams()
+  const id = params?.id as string
   const { user } = useAuth()
-  const { job, status, error, refetch } = useRenderJob(id as string)
+  const { job, error, refetch, isPolling } = useRenderJob(id)
+  const status = job?.status
 
   const [isDownloading, setIsDownloading] = useState(false)
 
@@ -61,7 +63,7 @@ export default function RenderJobPage() {
         return <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
       case 'failed':
         return <AlertCircle className="w-5 h-5 text-red-600" />
-      case 'queued':
+      case 'pending':
         return <Clock className="w-5 h-5 text-yellow-600" />
       default:
         return <Clock className="w-5 h-5 text-muted-foreground" />
@@ -173,7 +175,7 @@ export default function RenderJobPage() {
       </Card>
 
       <div className="flex gap-3">
-        <Button onClick={refetch} disabled={status === 'processing'}>
+        <Button onClick={() => refetch()} disabled={isPolling}>
           Refresh Status
         </Button>
         {user?.plan === 'pro' && (

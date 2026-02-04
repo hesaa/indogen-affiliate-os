@@ -16,6 +16,11 @@ export interface UseToast {
   showToast: (type: ToastType, title: string, description?: string) => void;
   hideToast: (id: string) => void;
   hideAllToasts: () => void;
+  // Convenience methods
+  success: (title: string, description?: string) => void;
+  error: (title: string, description?: string) => void;
+  info: (title: string, description?: string) => void;
+  warning: (title: string, description?: string) => void;
 }
 
 export const useToast = (): UseToast => {
@@ -44,5 +49,11 @@ export const useToast = (): UseToast => {
     setToasts([]);
   };
 
-  return { toasts, showToast, hideToast, hideAllToasts };
+  // Convenience methods
+  const success = (title: string, description?: string) => showToast('success', title, description);
+  const error = (title: string, description?: string) => showToast('error', title, description);
+  const info = (title: string, description?: string) => showToast('info', title, description);
+  const warning = (title: string, description?: string) => showToast('warning', title, description);
+
+  return { toasts, showToast, hideToast, hideAllToasts, success, error, info, warning };
 };

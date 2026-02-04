@@ -1,8 +1,5 @@
 // src/lib/api.ts
 import { API_BASE_URL } from '@/config/constants'
-import { useAuth } from '@/hooks/useAuth'
-import { useToast } from '@/hooks/useToast'
-import { mutate } from 'swr'
 import { APIError, APIResponse } from '@/types/index'
 
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
@@ -13,14 +10,10 @@ const apiClient = async <T>(
   data?: any,
   options: RequestInit = {}
 ): Promise<APIResponse<T>> => {
-  const auth = useAuth()
-  const toast = useToast()
-
   const config: RequestInit = {
     method,
     headers: {
       'Content-Type': 'application/json',
-      ...(auth.user?.token && { Authorization: `Bearer ${auth.user.token}` }),
       ...options.headers,
     },
     ...options,
@@ -31,18 +24,12 @@ const apiClient = async <T>(
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config)
+    const baseUrl = typeof window !== 'undefined' ? '' : API_BASE_URL;
+    const response = await fetch(`${baseUrl}${endpoint}`, config)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       const errorMessage = errorData.message || 'An error occurred'
-      
-      if (response.status === 401) {
-        auth.logout()
-        toast.error('Session expired. Please log in again.')
-      } else {
-        toast.error(errorMessage)
-      }
 
       throw new APIError(errorMessage, response.status)
     }
@@ -53,7 +40,6 @@ const apiClient = async <T>(
     if (error instanceof APIError) {
       throw error
     }
-    toast.error('Network error. Please try again.')
     throw new APIError('Network error', 500)
   }
 }
@@ -61,10 +47,10 @@ const apiClient = async <T>(
 export const api = {
   auth: {
     login: async (credentials: { email: string; password: string }) =>
-      apiClient<{ user: any; token: string }>('/auth/login', 'POST', credentials),
+      apiClient<{ user: any; token: string }>('/api/auth/login', 'POST', credentials),
     register: async (userData: any) =>
-      apiClient<{ user: any; token: string }>('/auth/register', 'POST', userData),
-    logout: async () => apiClient('/auth/logout', 'POST'),
+      apiClient<{ user: any; token: string }>('/api/auth/register', 'POST', userData),
+    logout: async () => apiClient('/api/auth/logout', 'POST'),
   },
   render: {
     create: async (jobData: any) =>

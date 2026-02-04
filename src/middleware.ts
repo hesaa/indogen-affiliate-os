@@ -1,9 +1,7 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@lib/auth'
-import { prisma } from '@lib/db'
+import { NextResponse, NextRequest } from 'next/server'
+import { getToken } from 'next-auth/jwt'
 
-export async function middleware(request: Request) {
-  const token = auth(request)
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Public routes - no authentication required
@@ -11,8 +9,8 @@ export async function middleware(request: Request) {
     '/login',
     '/register',
     '/landing',
-    '/api/auth/callback',
-    '/api/auth/register',
+    '/api/auth',
+    '/api/health',
   ]
 
   // Check if route is public
@@ -20,40 +18,30 @@ export async function middleware(request: Request) {
     return NextResponse.next()
   }
 
+  // Get the token from the request
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET
+  })
+
   // Check if user is authenticated
   if (!token?.user?.email) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Get user from database
-  const user = await prisma.user.findUnique({
-    where: { email: token.user.email },
-    select: { plan: true },
-  })
-
-  if (!user) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // Routes that require authentication (all authenticated users can access)
-  const authRoutes = [
-    '/dashboard',
-    '/dashboard/(render|links|comments|landing-pages)',
-    '/api/render',
-    '/api/links',
-    '/api/comments',
-    '/api/landing-pages',
-  ]
-
-  // Check if route requires authentication
-  if (authRoutes.some(route => pathname.startsWith(route))) {
-    return NextResponse.next()
-  }
-
-  // If we reach here, the route is not recognized
+  // All authenticated users can access these routes
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/((?!api|login|register|landing).*)'],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }

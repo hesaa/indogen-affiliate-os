@@ -13,15 +13,16 @@ export interface User {
 export interface RenderJob {
   id: string
   userId: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'
   inputUrl: string
   outputUrl?: string
   type: 'smart_content_rotator' | 'automated_comment_sniper' | 'advanced_link_cloaker' | 'micro_landing_page'
   settings: RenderJobSettings
   progress?: number
   error?: string
-  createdAt: Date
-  updatedAt: Date
+  metadata?: Record<string, any>
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
 export interface RenderJobSettings {
@@ -178,4 +179,88 @@ export interface AutoReply {
   status: 'pending' | 'sent' | 'failed'
   error?: string
   createdAt: Date
+}
+
+// Auth types
+export interface AuthUser {
+  id: string
+  email: string
+  name?: string
+  role: 'user' | 'admin'
+  plan: 'starter' | 'pro' | 'empire'
+  token?: string
+}
+
+// API Error classes
+export class ApiError extends Error {
+  code?: string
+  status?: number
+
+  constructor(status: number, message: string, code?: string) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.code = code
+  }
+}
+
+export class APIError extends Error {
+  code?: string
+  status?: number
+
+  constructor(message: string, status?: number, code?: string) {
+    super(message)
+    this.name = 'APIError'
+    this.status = status
+    this.code = code
+  }
+}
+
+export interface APIResponse<T = any> {
+  success: boolean
+  data?: T
+  error?: string
+  message?: string
+}
+
+// Upload types
+export interface UploadProgress {
+  loaded: number
+  total: number
+  percentage: number
+  percent?: number // Alias for compatibility
+}
+
+// Comment Scan types
+export type ScanStatus = 'idle' | 'scanning' | 'completed' | 'error'
+
+export interface CommentScanResponse {
+  id: string
+  status: ScanStatus
+  platform: 'tiktok' | 'instagram'
+  postId: string
+  commentsFound: number
+  triggersMatched: number
+  repliesSent: number
+  error?: string
+  createdAt: Date
+  completedAt?: Date
+}
+
+// Product/Review types
+export interface ProductReview {
+  id: string
+  author: string
+  rating: number
+  text: string
+  date: Date
+  verified?: boolean
+}
+
+export interface SocialProofData {
+  platform: 'shopee' | 'tokopedia' | 'amazon' | 'ebay'
+  rating: number
+  reviewCount: number
+  reviews: ProductReview[]
+  totalSales?: number
 }

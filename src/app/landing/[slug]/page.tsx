@@ -1,18 +1,35 @@
-import { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import { getLandingPage } from '@/lib/api-client'
+"use client";
+
+import React, { useEffect, useState } from 'react'
+import { useRouter, usePathname, useParams } from 'next/navigation'
+import apiClient from '@/lib/api-client'
 import { formatDistanceToNow } from 'date-fns'
 import { Clock, Star, ShoppingCart, Users, TrendingUp } from 'lucide-react'
 
-export default async function LandingPage({ params }: { params: { slug: string } }) {
+export default function LandingPage() {
   const router = useRouter()
   const pathname = usePathname()
+  const params = useParams()
+  const slug = params?.slug as string
+
   const [landingPage, setLandingPage] = useState<any>(null)
   const [timer, setTimer] = useState<number | null>(null)
 
+  const loadLandingPage = async () => {
+    if (!slug) return
+    try {
+      const response = await apiClient.get<any>(`/api/landing/${slug}`)
+      // Depending on API response structure, we might need response.data or response
+      setLandingPage(response.data || response)
+    } catch (error) {
+      console.error('Failed to load landing page:', error)
+      router.push('/404')
+    }
+  }
+
   useEffect(() => {
     loadLandingPage()
-  }, [params.slug, pathname])
+  }, [slug, pathname])
 
   useEffect(() => {
     if (landingPage?.expiresAt) {
@@ -24,20 +41,6 @@ export default async function LandingPage({ params }: { params: { slug: string }
     }
   }, [landingPage])
 
-  const loadLandingPage = async () => {
-    try {
-      const response = await getLandingPage(params.slug)
-      setLandingPage(response.data)
-    } catch (error) {
-      console.error('Failed to load landing page:', error)
-      router.push('/404')
-    }
-  }
-
-  if (!landingPage) {
-    return <div>Loading...</div>
-  }
-
   const formatTimer = (milliseconds: number) => {
     if (milliseconds <= 0) return 'Expired'
     const distance = Math.floor(milliseconds / 1000)
@@ -47,6 +50,17 @@ export default async function LandingPage({ params }: { params: { slug: string }
     const seconds = distance % 60
 
     return `${days}d ${hours}h ${minutes}m ${seconds}s`
+  }
+
+  if (!landingPage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-4 w-32 bg-gray-200 rounded mb-4"></div>
+          <p className="text-gray-500">Loading landing page...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -87,7 +101,7 @@ export default async function LandingPage({ params }: { params: { slug: string }
               <div className="absolute bottom-4 left-4 text-white">
                 <div className="flex items-center space-x-2 text-sm">
                   <Star className="w-4 h-4" />
-                  <span className="font-semibold">{landingPage.rating || '4.8'} â˜… ({landingPage.reviewsCount || '1.2k'})</span>
+                  <span className="font-semibold">{landingPage.rating || '4.8'} ★ ({landingPage.reviewsCount || '1.2k'})</span>
                 </div>
               </div>
             </div>

@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { db } from '@/lib/db'
+import { render_jobs } from '@/lib/db/schema'
+import { eq, and } from 'drizzle-orm'
+import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/authOptions'
-import { NextAuth } from 'next-auth'
-import { NextAuthOptions } from 'next-auth'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  // Get session from NextAuth
-  const authOptions: NextAuthOptions = authOptions
-  const session = await NextAuth(request, authOptions).getSession()
+  const session = await getServerSession(authOptions)
 
   if (!session?.user?.id) {
     return NextResponse.json(
@@ -19,36 +18,38 @@ export async function GET(
     )
   }
 
-  const userId = session.user.id
-  const renderJobId = params.id
+  const userId = parseInt(session.user.id)
+  const { id: jobIdStr } = await params
+  const jobId = parseInt(jobIdStr)
+
+  if (isNaN(jobId)) {
+    return NextResponse.json(
+      { error: 'Invalid job ID' },
+      { status: 400 }
+    )
+  }
 
   try {
     // Fetch render job with user validation
-    const renderJob = await prisma.renderJob.findUnique({
-      where: {
-        id_userId: {
-          id: renderJobId,
-          userId: userId,
-        },
-      },
-      select: {
-        id: true,
-        status: true,
-        progress: true,
-        outputUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
+    const [job] = await db
+      .select()
+      .from(render_jobs)
+      .where(
+        and(
+          eq(render_jobs.id, jobId),
+          eq(render_jobs.user_id, userId)
+        )
+      )
+      .limit(1)
 
-    if (!renderJob) {
+    if (!job) {
       return NextResponse.json(
         { error: 'Render job not found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json(renderJob)
+    return NextResponse.json(job)
   } catch (error) {
     console.error('Error fetching render job:', error)
     return NextResponse.json(

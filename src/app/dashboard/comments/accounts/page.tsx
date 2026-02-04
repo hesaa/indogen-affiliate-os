@@ -1,38 +1,28 @@
+"use client"
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
-import { Textarea } from '@/components/ui/Textarea'
-import { Plus, Trash2, Instagram, TikTok, AlertCircle } from 'lucide-react'
-import { api } from '@/lib/api'
+import { Instagram, Music, AlertCircle, Trash2, Loader2 } from 'lucide-react'
+import apiClient from '@/lib/api-client'
 import { useToast } from '@/hooks/useToast'
 
 export default function AccountsPage() {
   const { user } = useAuth()
   const router = useRouter()
-  const { toast } = useToast()
+  const toast = useToast()
   const [accounts, setAccounts] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/auth/login')
-      return
-    }
-
-    fetchAccounts()
-  }, [user])
-
   const fetchAccounts = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/api/comments/accounts')
-      setAccounts(response.data)
+      const response = await apiClient.get<any[]>('/api/comments/accounts')
+      setAccounts(response || [])
     } catch (err: any) {
       setError(err.message || 'Failed to fetch accounts')
       toast.error('Failed to fetch accounts')
@@ -41,11 +31,21 @@ export default function AccountsPage() {
     }
   }
 
+  useEffect(() => {
+    if (user) {
+      fetchAccounts()
+    }
+  }, [user])
+
   const handleConnect = async (platform: 'tiktok' | 'instagram') => {
     try {
       setLoading(true)
-      const response = await api.post('/api/comments/accounts', { platform })
-      window.location.href = response.data.oauthUrl
+      const response = await apiClient.post<any>('/api/comments/accounts', { platform })
+      if (response && response.oauthUrl) {
+        window.location.href = response.oauthUrl
+      } else {
+        throw new Error('No OAuth URL returned')
+      }
     } catch (err: any) {
       setError(err.message || `Failed to connect ${platform} account`)
       toast.error(`Failed to connect ${platform} account`)
@@ -55,9 +55,11 @@ export default function AccountsPage() {
   }
 
   const handleDisconnect = async (accountId: string) => {
+    if (!confirm('Are you sure you want to disconnect this account?')) return
+
     try {
       setLoading(true)
-      await api.delete(`/api/comments/accounts/${accountId}`)
+      await apiClient.delete(`/api/comments/accounts/${accountId}`)
       setAccounts(accounts.filter((acc) => acc.id !== accountId))
       toast.success('Account disconnected successfully')
     } catch (err: any) {
@@ -70,109 +72,119 @@ export default function AccountsPage() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-gray-600">Loading...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Social Account Connections</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Social Connections</h1>
+          <p className="text-slate-600">Connect your accounts to automate comments and bio links</p>
+        </div>
         <div className="flex gap-2">
           <Button
             onClick={() => handleConnect('instagram')}
             disabled={loading}
+            variant="outline"
             className="flex items-center gap-2"
           >
-            <Instagram className="h-4 w-4" />
+            <Instagram className="h-4 w-4 text-pink-600" />
             Connect Instagram
           </Button>
           <Button
             onClick={() => handleConnect('tiktok')}
             disabled={loading}
+            variant="outline"
             className="flex items-center gap-2"
           >
-            <TikTok className="h-4 w-4" />
+            <Music className="h-4 w-4 text-black" />
             Connect TikTok
           </Button>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <AlertCircle className="h-5 w-5 mr-2 inline" />
-          <span className="text-red-800">{error}</span>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-red-600" />
+          <span className="text-red-800 text-sm font-medium">{error}</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {accounts.map((account) => (
-          <Card key={account.id} className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+          <Card key={account.id} className="p-6 relative bg-white overflow-hidden">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100">
                 {account.platform === 'instagram' ? (
-                  <Instagram className="h-4 w-4 text-blue-600" />
+                  <Instagram className="h-6 w-6 text-pink-600" />
                 ) : (
-                  <TikTok className="h-4 w-4 text-red-600" />
+                  <Music className="h-6 w-6 text-black" />
                 )}
               </div>
-              <h3 className="text-lg font-semibold">
-                {account.username || account.platform}
-              </h3>
-              <Badge variant="secondary">{account.platform}</Badge>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-slate-900 truncate">
+                  {account.username || account.platform}
+                </h3>
+                <Badge variant="secondary" className="mt-0.5 capitalize">{account.platform}</Badge>
+              </div>
+              <Button
+                onClick={() => handleDisconnect(account.id)}
+                variant="ghost"
+                size="sm"
+                className="text-slate-400 hover:text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span className="font-medium">Followers:</span>
-                <span>{account.followers || 'N/A'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span className="font-medium">Status:</span>
-                <span className="text-green-600 font-medium">
-                  {account.connected ? 'Connected' : 'Disconnected'}
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Connected Since</span>
+                <span className="font-medium text-slate-700">
+                  {new Date(account.created_at || account.createdAt).toLocaleDateString()}
                 </span>
               </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Status</span>
+                <Badge variant="success" className="bg-emerald-100 text-emerald-700 border-none">Active</Badge>
+              </div>
             </div>
-
-            <Button
-              onClick={() => handleDisconnect(account.id)}
-              className="absolute top-2 right-2"
-              variant="ghost"
-              size="sm"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
           </Card>
         ))}
       </div>
 
-      {accounts.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">
-            No social accounts connected yet
-          </p>
-          <div className="flex justify-center gap-2">
-            <Button
-              onClick={() => handleConnect('instagram')}
-              disabled={loading}
-            >
-              <Instagram className="h-4 w-4 mr-2" />
-              Connect Instagram
-            </Button>
-            <Button
-              onClick={() => handleConnect('tiktok')}
-              disabled={loading}
-            >
-              <TikTok className="h-4 w-4 mr-2" />
-              Connect TikTok
-            </Button>
+      {accounts.length === 0 && !loading && (
+        <Card className="text-center py-16 border-dashed">
+          <div className="max-w-md mx-auto">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Music className="h-8 w-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">No Social Accounts</h3>
+            <p className="text-slate-500 mb-8">
+              Connect your first social account to start automating your affiliate marketing efforts.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Button
+                onClick={() => handleConnect('instagram')}
+                disabled={loading}
+              >
+                <Instagram className="h-4 w-4 mr-2" />
+                Connect Instagram
+              </Button>
+              <Button
+                onClick={() => handleConnect('tiktok')}
+                disabled={loading}
+              >
+                <Music className="h-4 w-4 mr-2" />
+                Connect TikTok
+              </Button>
+            </div>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   )

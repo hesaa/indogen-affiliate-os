@@ -1,4 +1,15 @@
 import { z } from 'zod';
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+export * from './utils/logger';
+
+/**
+ * Utility function to merge Tailwind CSS classes
+ * Combines clsx and tailwind-merge for optimal class handling
+ */
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 
 // Validation schemas
 export const emailSchema = z.string().email('Invalid email address');
@@ -86,9 +97,9 @@ export const truncate = (text: string, maxLength: number) => {
 
 // Object utilities
 export const isEmpty = (obj: any): boolean => {
-  return obj === null || obj === undefined || 
-         (typeof obj === 'object' && Object.keys(obj).length === 0) ||
-         (typeof obj === 'string' && obj.trim().length === 0);
+  return obj === null || obj === undefined ||
+    (typeof obj === 'object' && Object.keys(obj).length === 0) ||
+    (typeof obj === 'string' && obj.trim().length === 0);
 };
 
 export const deepCopy = <T>(obj: T): T => {

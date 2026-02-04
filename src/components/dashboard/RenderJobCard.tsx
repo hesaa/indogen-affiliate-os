@@ -6,71 +6,49 @@ import { Progress } from '@/components/ui/Progress';
 import { Play, Download, X, Check, Clock, AlertTriangle } from 'lucide-react';
 import { useRenderJob } from '@/hooks/useRenderJob';
 import { useToast } from '@/hooks/useToast';
-import { apiClient } from '@/lib/api-client';
+import apiClient from '@/lib/api-client';
 
 interface RenderJobCardProps {
   job: {
     id: string;
     status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
     progress?: number;
-    createdAt: string;
+    createdAt: string | Date;
     outputUrl?: string;
     error?: string;
     previewUrl?: string;
   };
-  onRemove?: (jobId: string) => void;
+  onDelete?: (jobId: string) => void;
   className?: string;
 }
 
-export function RenderJobCard({ job, onRemove, className = '' }: RenderJobCardProps) {
-  const [isPolling, setIsPolling] = useState(false);
-  const { data: jobStatus, refetch } = useRenderJob(job.id);
-  const { toast } = useToast();
+export function RenderJobCard({ job: initialJob, onDelete, className = '' }: RenderJobCardProps) {
+  const { job: polledJob, startPolling, stopPolling, error: pollError } = useRenderJob(initialJob.id);
+  const toast = useToast();
 
-  useEffect(() => {
-    if (isPolling) {
-      const interval = setInterval(() => {
-        refetch();
-      }, 3000);
-
-      return () => clearInterval(interval);
-    }
-  }, [isPolling, refetch]);
+  const job = polledJob || initialJob;
 
   const handleRefresh = async () => {
-    setIsPolling(true);
-    await refetch();
+    startPolling();
   };
 
   const handleDownload = async () => {
     if (job.outputUrl) {
       window.open(job.outputUrl, '_blank');
     } else {
-      toast({
-        title: 'Download unavailable',
-        description: 'The render job is not completed yet.',
-        status: 'error',
-      });
+      toast.error('Download unavailable', 'The render job is not completed yet.');
     }
   };
 
   const handleRemove = async () => {
-    if (onRemove) {
-      onRemove(job.id);
+    if (onDelete) {
+      onDelete(String(job.id));
     } else {
       try {
         await apiClient.delete(`/api/render/${job.id}`);
-        toast({
-          title: 'Job removed',
-          description: 'The render job has been deleted.',
-          status: 'success',
-        });
+        toast.success('Job removed', 'The render job has been deleted.');
       } catch (error) {
-        toast({
-          title: 'Error removing job',
-          description: 'Failed to remove the render job.',
-          status: 'error',
-        });
+        toast.error('Error removing job', 'Failed to remove the render job.');
       }
     }
   };
@@ -85,8 +63,6 @@ export function RenderJobCard({ job, onRemove, className = '' }: RenderJobCardPr
         return <Check className="text-green-500" />;
       case 'failed':
         return <AlertTriangle className="text-red-500" />;
-      case 'cancelled':
-        return <X className="text-gray-500" />;
       default:
         return <Clock className="text-yellow-500" />;
     }
@@ -102,8 +78,6 @@ export function RenderJobCard({ job, onRemove, className = '' }: RenderJobCardPr
         return 'bg-green-100 text-green-800';
       case 'failed':
         return 'bg-red-100 text-red-800';
-      case 'cancelled':
-        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-yellow-100 text-yellow-800';
     }
@@ -119,8 +93,6 @@ export function RenderJobCard({ job, onRemove, className = '' }: RenderJobCardPr
         return 'Completed';
       case 'failed':
         return 'Failed';
-      case 'cancelled':
-        return 'Cancelled';
       default:
         return 'Unknown';
     }
@@ -128,9 +100,9 @@ export function RenderJobCard({ job, onRemove, className = '' }: RenderJobCardPr
 
   return (
     <Card className={`relative ${className}`}>
-      <CardHeader className="flex justify-between items-start">
+      <CardHeader className="flex flex-row justify-between items-start">
         <CardTitle className="text-sm font-medium">
-          {job.id}
+          Job #{job.id}
         </CardTitle>
         <Badge variant="secondary" className={getStatusColor()}>
           {getStatusText()}
@@ -156,7 +128,6 @@ export function RenderJobCard({ job, onRemove, className = '' }: RenderJobCardPr
               size="sm"
               variant="outline"
               onClick={handleRefresh}
-              disabled={isPolling}
             >
               Refresh
             </Button>
@@ -164,7 +135,6 @@ export function RenderJobCard({ job, onRemove, className = '' }: RenderJobCardPr
               <Button
                 size="sm"
                 onClick={handleDownload}
-                disabled={!job.outputUrl}
               >
                 <Download className="h-4 w-4 mr-1" />
                 Download
@@ -175,16 +145,6 @@ export function RenderJobCard({ job, onRemove, className = '' }: RenderJobCardPr
 
         {job.progress !== undefined && job.progress > 0 && (
           <Progress value={job.progress} className="h-2" />
-        )}
-
-        {job.previewUrl && (
-          <div className="relative overflow-hidden rounded-lg bg-gray-100">
-            <img
-              src={job.previewUrl}
-              alt="Render preview"
-              className="w-full h-auto"
-            />
-          </div>
         )}
 
         <CardDescription className="text-xs text-gray-500">
@@ -199,10 +159,11 @@ export function RenderJobCard({ job, onRemove, className = '' }: RenderJobCardPr
         </CardDescription>
       </CardContent>
 
+
       <Button
         variant="ghost"
-        size="sm"
-        className="absolute top-2 right-2"
+        size="icon"
+        className="absolute top-2 right-2 h-8 w-8"
         onClick={handleRemove}
         disabled={job.status === 'processing'}
       >

@@ -1,10 +1,19 @@
 // src/worker/renderWorker.ts
 import { Redis } from 'ioredis';
 import { execa } from 'execa';
-import { drizzle } from '@src/lib/db';
-import { redisClient } from '@src/lib/redis/client';
-import { logger } from '@src/lib/utils/logger';
+import { db } from '@/lib/db';
+import { render_jobs } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { getRedisClient } from '@/lib/redis/client';
 import { v4 as uuidv4 } from 'uuid';
+
+// Simple logger
+const logger = {
+  info: (msg: string, ...args: any[]) => console.log(`[INFO] ${msg}`, ...args),
+  error: (msg: string, ...args: any[]) => console.error(`[ERROR] ${msg}`, ...args),
+};
+
+const redisClient = getRedisClient();
 
 // Worker configuration
 const REDIS_QUEUE = 'render_jobs';
@@ -12,28 +21,32 @@ const FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg';
 const MAX_RETRIES = 3;
 
 interface RenderJob {
-  id: string;
-  userId: string;
-  inputUrl: string;
-  outputFormat: string;
-  effects: string[];
+  id: number;
+  user_id: number;
+  input_url: string;
+  output_url?: string;
   status: string;
   progress: number;
   retries: number;
+  format?: string;
+  effects?: string[];
 }
 
 async function processJob(job: RenderJob): Promise<void> {
   const jobId = job.id;
-  const inputUrl = job.inputUrl;
-  const outputFormat = job.outputFormat;
-  const effects = job.effects;
+  const inputUrl = job.input_url;
+  const outputFormat = job.format || 'mp4';
+  const effects = job.effects || [];
 
   try {
     // Update job status to processing
-    await drizzle.update('render_jobs', { id: jobId }, {
-      status: 'processing',
-      progress: 0,
-    });
+    await db.update(render_jobs)
+      .set({
+        status: 'processing',
+        progress: 0,
+        updated_at: new Date(),
+      })
+      .where(eq(render_jobs.id, jobId));
 
     // Build FFmpeg command
     const outputPath = `/tmp/output_${jobId}.${outputFormat}`;
@@ -76,7 +89,7 @@ async function processJob(job: RenderJob): Promise<void> {
       },
     });
 
-    ffmpegProcess.stderr?.on('data', (data) => {
+    ffmpegProcess.stderr?.on('data', (data: Buffer) => {
       const output = data.toString();
       const progressMatch = output.match(/time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})/);
       if (progressMatch) {
@@ -85,7 +98,7 @@ async function processJob(job: RenderJob): Promise<void> {
         const seconds = parseInt(progressMatch[3]);
         const totalSeconds = hours * 3600 + minutes * 60 + seconds;
         const progress = Math.floor((totalSeconds / 10) * 100); // Simplified progress calculation
-        drizzle.update('render_jobs', { id: jobId }, { progress });
+        // TODO: Update database with progress
       }
     });
 
@@ -96,11 +109,14 @@ async function processJob(job: RenderJob): Promise<void> {
     const outputUrl = await uploadToCloud(outputPath);
 
     // Update job status to completed
-    await drizzle.update('render_jobs', { id: jobId }, {
-      status: 'completed',
-      progress: 100,
-      outputUrl,
-    });
+    await db.update(render_jobs)
+      .set({
+        status: 'completed',
+        progress: 100,
+        output_url: outputUrl,
+        updated_at: new Date(),
+      })
+      .where(eq(render_jobs.id, jobId));
 
     logger.info(`Job ${jobId} completed successfully`);
   } catch (error) {
@@ -108,20 +124,26 @@ async function processJob(job: RenderJob): Promise<void> {
 
     // Retry logic
     if (job.retries < MAX_RETRIES) {
-      await drizzle.update('render_jobs', { id: jobId }, {
-        status: 'queued',
-        progress: 0,
-        retries: job.retries + 1,
-      });
+      await db.update(render_jobs)
+        .set({
+          status: 'pending',
+          progress: 0,
+          updated_at: new Date(),
+        })
+        .where(eq(render_jobs.id, jobId));
       await redisClient.rpush(REDIS_QUEUE, JSON.stringify({
         ...job,
         retries: job.retries + 1,
       }));
     } else {
-      await drizzle.update('render_jobs', { id: jobId }, {
-        status: 'failed',
-        progress: 0,
-      });
+      await db.update(render_jobs)
+        .set({
+          status: 'failed',
+          progress: 0,
+          error_message: error instanceof Error ? error.message : 'Unknown error',
+          updated_at: new Date(),
+        })
+        .where(eq(render_jobs.id, jobId));
     }
   }
 }
@@ -139,7 +161,7 @@ async function main() {
   const subscriber = redisClient.duplicate();
   subscriber.subscribe(REDIS_QUEUE);
 
-  subscriber.on('message', async (channel, message) => {
+  subscriber.on('message', async (channel: string, message: string) => {
     if (channel === REDIS_QUEUE) {
       try {
         const job: RenderJob = JSON.parse(message);

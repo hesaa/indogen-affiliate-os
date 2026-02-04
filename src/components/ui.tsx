@@ -8,14 +8,16 @@ export function Button({
   size = 'md',
   loading = false,
   disabled = false,
+  asChild = false,
   children,
   className,
   ...props
 }: {
-  variant?: 'default' | 'primary' | 'secondary' | 'destructive' | 'outline';
+  variant?: 'default' | 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
+  asChild?: boolean;
   children: React.ReactNode;
   className?: string;
   [key: string]: any;
@@ -28,6 +30,8 @@ export function Button({
     secondary: 'bg-gray-200 text-gray-700 hover:bg-gray-300',
     destructive: 'bg-red-600 text-white hover:bg-red-700',
     outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50',
+    ghost: 'hover:bg-gray-100 text-gray-700',
+    link: 'text-blue-600 underline hover:text-blue-700',
   };
 
   const sizes = {
@@ -235,9 +239,9 @@ export function Alert({
       {variant === 'error' && <AlertCircle className="mr-3 h-5 w-5 text-red-600" />}
       {variant === 'warning' && <AlertCircle className="mr-3 h-5 w-5 text-yellow-600" />}
       {variant === 'default' && <AlertCircle className="mr-3 h-5 w-5 text-blue-600" />}
-      
+
       <div className="flex-1 text-sm text-gray-700">{children}</div>
-      
+
       {onClose && (
         <button
           type="button"

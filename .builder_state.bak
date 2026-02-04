@@ -6,99 +6,179 @@
   "pending_files": [
     {
       "path": "src/app/layout.tsx",
-      "purpose": "Root layout setup with metadata and providers"
+      "purpose": "Root layout with font, theme, and navigation structure"
     },
     {
       "path": "src/app/page.tsx",
-      "purpose": "Main dashboard and landing page"
+      "purpose": "Landing page with hero, features, and pricing CTA"
     },
     {
-      "path": "src/app/api/renders/route.ts",
-      "purpose": "API endpoint for video rendering jobs"
+      "path": "src/app/(auth)/login/page.tsx",
+      "purpose": "Authentication login page"
     },
     {
-      "path": "src/app/api/cloaks/route.ts",
-      "purpose": "API endpoint for link cloaking"
+      "path": "src/app/(auth)/register/page.tsx",
+      "purpose": "Registration with plan selection"
     },
     {
-      "path": "src/app/api/comments/route.ts",
-      "purpose": "API endpoint for comment automation"
+      "path": "src/app/dashboard/layout.tsx",
+      "purpose": "Dashboard layout with sidebar navigation"
     },
     {
-      "path": "src/components/ui/",
-      "purpose": "Reusable UI components with Tailwind"
+      "path": "src/app/dashboard/page.tsx",
+      "purpose": "Dashboard overview with stats and quick actions"
     },
     {
-      "path": "src/components/features/",
-      "purpose": "Feature-specific components"
+      "path": "src/app/dashboard/render/page.tsx",
+      "purpose": "Video render job creation and management interface"
     },
     {
-      "path": "src/lib/",
-      "purpose": "Utility functions and configurations"
+      "path": "src/app/dashboard/links/page.tsx",
+      "purpose": "Cloaked link management dashboard"
     },
     {
-      "path": "src/lib/ffmpeg.ts",
-      "purpose": "FFmpeg wrapper for video processing"
+      "path": "src/app/dashboard/landing-pages/page.tsx",
+      "purpose": "Micro-landing page generator and management"
     },
     {
-      "path": "src/lib/redis.ts",
-      "purpose": "Redis client configuration"
+      "path": "src/app/dashboard/comments/page.tsx",
+      "purpose": "Comment sniper configuration and history"
     },
     {
-      "path": "src/lib/drizzle.ts",
-      "purpose": "Drizzle ORM configuration"
+      "path": "src/app/dashboard/settings/page.tsx",
+      "purpose": "User settings, API keys, and social connections"
     },
     {
-      "path": "src/hooks/",
-      "purpose": "Custom React hooks"
+      "path": "src/app/pricing/page.tsx",
+      "purpose": "Pricing tiers with Stripe checkout integration"
     },
     {
-      "path": "src/types/",
-      "purpose": "TypeScript type definitions"
+      "path": "src/app/api/render/route.ts",
+      "purpose": "POST: Create render job, GET: Check job status"
     },
     {
-      "path": "src/db/",
-      "purpose": "Database schema and migrations"
+      "path": "src/app/api/cloak/route.ts",
+      "purpose": "POST: Create cloaked link, GET: List links, DELETE: Remove link"
     },
     {
-      "path": "src/db/schema.ts",
-      "purpose": "Drizzle schema definitions"
+      "path": "src/app/api/landing-pages/[slug]/route.ts",
+      "purpose": "GET: Serve generated landing page, POST: Generate new page"
     },
     {
-      "path": "src/db/migrations/",
-      "purpose": "Database migration files"
+      "path": "src/app/api/comments/sync/route.ts",
+      "purpose": "POST: Trigger comment sync from social platforms"
     },
     {
-      "path": "src/workers/",
-      "purpose": "Background worker processes"
+      "path": "src/app/api/webhooks/stripe/route.ts",
+      "purpose": "Stripe webhook handler for subscription events"
     },
     {
-      "path": "src/workers/video-renderer.ts",
-      "purpose": "Bun worker for video rendering"
+      "path": "src/components/ui/Button.tsx",
+      "purpose": "Reusable button component with variants"
     },
     {
-      "path": "src/workers/comment-scraper.ts",
-      "purpose": "Bun worker for comment automation"
+      "path": "src/components/ui/Card.tsx",
+      "purpose": "Card component for dashboard widgets"
     },
     {
-      "path": "tsconfig.json",
-      "purpose": "TypeScript configuration"
+      "path": "src/components/dashboard/RenderJobCard.tsx",
+      "purpose": "Card displaying render job status and preview"
     },
     {
-      "path": "next.config.ts",
-      "purpose": "Next.js configuration"
+      "path": "src/components/dashboard/CloakedLinkCard.tsx",
+      "purpose": "Card with cloaked link stats and copy button"
+    },
+    {
+      "path": "src/components/dashboard/LandingPagePreview.tsx",
+      "purpose": "Live preview of generated landing page"
+    },
+    {
+      "path": "src/components/dashboard/CommentSniperConfig.tsx",
+      "purpose": "Form for configuring keywords and reply templates"
+    },
+    {
+      "path": "src/lib/db/index.ts",
+      "purpose": "Drizzle connection setup and query interface"
+    },
+    {
+      "path": "src/lib/db/schema.ts",
+      "purpose": "Complete database schema with all tables and relations"
+    },
+    {
+      "path": "src/lib/redis/client.ts",
+      "purpose": "Redis client configuration for BullMQ"
+    },
+    {
+      "path": "src/lib/redis/queues.ts",
+      "purpose": "BullMQ queue definitions for render jobs"
+    },
+    {
+      "path": "src/worker/render.worker.ts",
+      "purpose": "Bun worker for parallel video rendering with FFmpeg"
+    },
+    {
+      "path": "src/worker/comment.worker.ts",
+      "purpose": "Bun worker for periodic comment scanning and replying"
+    },
+    {
+      "path": "src/lib/utils/ffmpeg.ts",
+      "purpose": "FFmpeg command builder with anti-detection filters"
+    },
+    {
+      "path": "src/lib/utils/metadata.ts",
+      "purpose": "EXIF scrubbing and binary noise injection utilities"
+    },
+    {
+      "path": "src/lib/utils/social.ts",
+      "purpose": "Social platform API wrappers (TikTok, Instagram, Shopee)"
+    },
+    {
+      "path": "src/lib/utils/scraper.ts",
+      "purpose": "Product review and photo scraper for landing pages"
+    },
+    {
+      "path": "src/lib/utils/cloak.ts",
+      "purpose": "Link cloaking logic with bot detection"
+    },
+    {
+      "path": "src/hooks/useRenderJob.ts",
+      "purpose": "Custom hook for polling render job status with SWR"
+    },
+    {
+      "path": "src/hooks/useSubscription.ts",
+      "purpose": "Hook for managing user subscription status"
+    },
+    {
+      "path": "src/types/index.ts",
+      "purpose": "Global TypeScript types and interfaces"
+    },
+    {
+      "path": "src/types/database.types.ts",
+      "purpose": "Drizzle-generated database type extensions"
     },
     {
       "path": "drizzle.config.ts",
-      "purpose": "Drizzle ORM configuration"
+      "purpose": "Drizzle ORM configuration with migration output"
+    },
+    {
+      "path": "next.config.js",
+      "purpose": "Next.js configuration with Bun runtime and image domains"
+    },
+    {
+      "path": "tsconfig.json",
+      "purpose": "TypeScript configuration with path mappings"
     },
     {
       "path": "package.json",
-      "purpose": "Project dependencies and scripts"
+      "purpose": "Project dependencies, scripts, and Bun engine specification"
     },
     {
-      "path": "bun.lockb",
-      "purpose": "Bun lock file for dependency management"
+      "path": ".env.example",
+      "purpose": "Environment variables template"
+    },
+    {
+      "path": "docker-compose.yml",
+      "purpose": "Local development stack (PostgreSQL, Redis)"
     }
   ],
   "errors": [
@@ -135,127 +215,206 @@
   ],
   "atomic_operations": true,
   "created_at": "2026-02-04T14:22:54.892513",
-  "last_updated": "2026-02-04T15:30:25.661709",
-  "state_version": 178,
+  "last_updated": "2026-02-04T15:54:00.822237",
+  "state_version": 245,
   "project_spec": {
     "project_name": "IndoGen_Affiliate_OS",
     "core_features": [
-      "Smart Content Rotator with visual shuffling and metadata scrubbing",
-      "Automated Comment Sniper with keyword triggers and natural delays",
-      "Advanced Link Cloaker with URL wrapping and bot filtering",
-      "Micro-Landing Page Generator with social proof scraping",
-      "Bun-powered video rendering worker with FFmpeg integration",
-      "Credit-based system for scalable video rendering",
-      "Unique domain rotation for Elite-tier users"
+      "Smart Content Rotator (Anti-Shadowban) - Visual shuffling, metadata scrubbing, dynamic overlays",
+      "Automated Comment Sniper - Keyword-triggered replies with natural delays and bio/DM redirection",
+      "Advanced Link Cloaker - URL masking with bot detection and safe page serving",
+      "Micro-Landing Page Generator - Social proof scraping with urgency timers",
+      "Bun-Powered Video Rendering Worker - High-performance parallel FFmpeg processing"
     ],
     "tech_stack": {
       "frontend": "Next.js 16.1.6 (App Router in src/ directory)",
       "database": "Drizzle ORM with PostgreSQL",
       "styling": "Tailwind CSS",
       "structure": "Source code MUST be inside 'src/' folder",
-      "runtime": "Bun for ultra-fast performance",
-      "queue": "Redis for job queue management",
-      "video_processing": "FFmpeg with Bun.spawn for efficient rendering"
+      "runtime": "Bun (for both Next.js app and rendering worker)",
+      "queue": "Redis (BullMQ) for job queuing",
+      "storage": "S3-compatible object storage for assets",
+      "payments": "Stripe (with IDR support)"
     },
     "file_structure": [
       {
         "path": "src/app/layout.tsx",
-        "purpose": "Root layout setup with metadata and providers"
+        "purpose": "Root layout with font, theme, and navigation structure"
       },
       {
         "path": "src/app/page.tsx",
-        "purpose": "Main dashboard and landing page"
+        "purpose": "Landing page with hero, features, and pricing CTA"
       },
       {
-        "path": "src/app/api/renders/route.ts",
-        "purpose": "API endpoint for video rendering jobs"
+        "path": "src/app/(auth)/login/page.tsx",
+        "purpose": "Authentication login page"
       },
       {
-        "path": "src/app/api/cloaks/route.ts",
-        "purpose": "API endpoint for link cloaking"
+        "path": "src/app/(auth)/register/page.tsx",
+        "purpose": "Registration with plan selection"
       },
       {
-        "path": "src/app/api/comments/route.ts",
-        "purpose": "API endpoint for comment automation"
+        "path": "src/app/dashboard/layout.tsx",
+        "purpose": "Dashboard layout with sidebar navigation"
       },
       {
-        "path": "src/components/ui/",
-        "purpose": "Reusable UI components with Tailwind"
+        "path": "src/app/dashboard/page.tsx",
+        "purpose": "Dashboard overview with stats and quick actions"
       },
       {
-        "path": "src/components/features/",
-        "purpose": "Feature-specific components"
+        "path": "src/app/dashboard/render/page.tsx",
+        "purpose": "Video render job creation and management interface"
       },
       {
-        "path": "src/lib/",
-        "purpose": "Utility functions and configurations"
+        "path": "src/app/dashboard/links/page.tsx",
+        "purpose": "Cloaked link management dashboard"
       },
       {
-        "path": "src/lib/ffmpeg.ts",
-        "purpose": "FFmpeg wrapper for video processing"
+        "path": "src/app/dashboard/landing-pages/page.tsx",
+        "purpose": "Micro-landing page generator and management"
       },
       {
-        "path": "src/lib/redis.ts",
-        "purpose": "Redis client configuration"
+        "path": "src/app/dashboard/comments/page.tsx",
+        "purpose": "Comment sniper configuration and history"
       },
       {
-        "path": "src/lib/drizzle.ts",
-        "purpose": "Drizzle ORM configuration"
+        "path": "src/app/dashboard/settings/page.tsx",
+        "purpose": "User settings, API keys, and social connections"
       },
       {
-        "path": "src/hooks/",
-        "purpose": "Custom React hooks"
+        "path": "src/app/pricing/page.tsx",
+        "purpose": "Pricing tiers with Stripe checkout integration"
       },
       {
-        "path": "src/types/",
-        "purpose": "TypeScript type definitions"
+        "path": "src/app/api/render/route.ts",
+        "purpose": "POST: Create render job, GET: Check job status"
       },
       {
-        "path": "src/db/",
-        "purpose": "Database schema and migrations"
+        "path": "src/app/api/cloak/route.ts",
+        "purpose": "POST: Create cloaked link, GET: List links, DELETE: Remove link"
       },
       {
-        "path": "src/db/schema.ts",
-        "purpose": "Drizzle schema definitions"
+        "path": "src/app/api/landing-pages/[slug]/route.ts",
+        "purpose": "GET: Serve generated landing page, POST: Generate new page"
       },
       {
-        "path": "src/db/migrations/",
-        "purpose": "Database migration files"
+        "path": "src/app/api/comments/sync/route.ts",
+        "purpose": "POST: Trigger comment sync from social platforms"
       },
       {
-        "path": "src/workers/",
-        "purpose": "Background worker processes"
+        "path": "src/app/api/webhooks/stripe/route.ts",
+        "purpose": "Stripe webhook handler for subscription events"
       },
       {
-        "path": "src/workers/video-renderer.ts",
-        "purpose": "Bun worker for video rendering"
+        "path": "src/components/ui/Button.tsx",
+        "purpose": "Reusable button component with variants"
       },
       {
-        "path": "src/workers/comment-scraper.ts",
-        "purpose": "Bun worker for comment automation"
+        "path": "src/components/ui/Card.tsx",
+        "purpose": "Card component for dashboard widgets"
       },
       {
-        "path": "tsconfig.json",
-        "purpose": "TypeScript configuration"
+        "path": "src/components/dashboard/RenderJobCard.tsx",
+        "purpose": "Card displaying render job status and preview"
       },
       {
-        "path": "next.config.ts",
-        "purpose": "Next.js configuration"
+        "path": "src/components/dashboard/CloakedLinkCard.tsx",
+        "purpose": "Card with cloaked link stats and copy button"
+      },
+      {
+        "path": "src/components/dashboard/LandingPagePreview.tsx",
+        "purpose": "Live preview of generated landing page"
+      },
+      {
+        "path": "src/components/dashboard/CommentSniperConfig.tsx",
+        "purpose": "Form for configuring keywords and reply templates"
+      },
+      {
+        "path": "src/lib/db/index.ts",
+        "purpose": "Drizzle connection setup and query interface"
+      },
+      {
+        "path": "src/lib/db/schema.ts",
+        "purpose": "Complete database schema with all tables and relations"
+      },
+      {
+        "path": "src/lib/redis/client.ts",
+        "purpose": "Redis client configuration for BullMQ"
+      },
+      {
+        "path": "src/lib/redis/queues.ts",
+        "purpose": "BullMQ queue definitions for render jobs"
+      },
+      {
+        "path": "src/worker/render.worker.ts",
+        "purpose": "Bun worker for parallel video rendering with FFmpeg"
+      },
+      {
+        "path": "src/worker/comment.worker.ts",
+        "purpose": "Bun worker for periodic comment scanning and replying"
+      },
+      {
+        "path": "src/lib/utils/ffmpeg.ts",
+        "purpose": "FFmpeg command builder with anti-detection filters"
+      },
+      {
+        "path": "src/lib/utils/metadata.ts",
+        "purpose": "EXIF scrubbing and binary noise injection utilities"
+      },
+      {
+        "path": "src/lib/utils/social.ts",
+        "purpose": "Social platform API wrappers (TikTok, Instagram, Shopee)"
+      },
+      {
+        "path": "src/lib/utils/scraper.ts",
+        "purpose": "Product review and photo scraper for landing pages"
+      },
+      {
+        "path": "src/lib/utils/cloak.ts",
+        "purpose": "Link cloaking logic with bot detection"
+      },
+      {
+        "path": "src/hooks/useRenderJob.ts",
+        "purpose": "Custom hook for polling render job status with SWR"
+      },
+      {
+        "path": "src/hooks/useSubscription.ts",
+        "purpose": "Hook for managing user subscription status"
+      },
+      {
+        "path": "src/types/index.ts",
+        "purpose": "Global TypeScript types and interfaces"
+      },
+      {
+        "path": "src/types/database.types.ts",
+        "purpose": "Drizzle-generated database type extensions"
       },
       {
         "path": "drizzle.config.ts",
-        "purpose": "Drizzle ORM configuration"
+        "purpose": "Drizzle ORM configuration with migration output"
+      },
+      {
+        "path": "next.config.js",
+        "purpose": "Next.js configuration with Bun runtime and image domains"
+      },
+      {
+        "path": "tsconfig.json",
+        "purpose": "TypeScript configuration with path mappings"
       },
       {
         "path": "package.json",
-        "purpose": "Project dependencies and scripts"
+        "purpose": "Project dependencies, scripts, and Bun engine specification"
       },
       {
-        "path": "bun.lockb",
-        "purpose": "Bun lock file for dependency management"
+        "path": ".env.example",
+        "purpose": "Environment variables template"
+      },
+      {
+        "path": "docker-compose.yml",
+        "purpose": "Local development stack (PostgreSQL, Redis)"
       }
     ],
-    "architectural_reasoning": "The file structure follows Next.js 16.1.6 App Router best practices with all source code inside the 'src/' directory as mandated. The architecture separates concerns clearly: API routes handle business logic, components are organized by feature, and workers handle background processing. The use of Bun runtime ensures maximum performance for video rendering tasks, while Redis provides efficient job queue management. Drizzle ORM with PostgreSQL offers type-safe database operations. The structure supports scalability through modular design, allowing easy addition of new features like GPU rendering or additional automation tools. The credit-based system and unique domain rotation address the critical evaluation points about scalability and AI detection, ensuring long-term viability of the platform."
+    "architectural_reasoning": "This architecture fulfills the blueprint by creating a production-ready, scalable micro-SaaS with strict separation of concerns. The src/ directory contains all application code following Next.js 14+ App Router conventions. The Bun rendering worker operates independently via Redis queues, enabling horizontal scaling without blocking the main thread. Drizzle ORM provides type-safe database access with clear schema definitions. The four core features are implemented as dedicated API routes and dashboard modules. The system uses a credit-based rendering system (linked to subscription tiers) to manage resource allocation. Anti-detection measures are embedded in the FFmpeg pipeline (metadata scrubbing, visual shuffling). The comment sniper uses randomized delays and safe redirection to avoid platform bans. Link cloaking includes bot detection and safe page serving. Landing pages dynamically scrape social proof with countdown timers. All sensitive operations are rate-limited and logged. The architecture supports the Indonesian market with IDR pricing and local social platform integrations. The modular design allows independent scaling of rendering workers as demand grows, while the Next.js frontend remains responsive through SWR caching and optimistic updates."
   },
   "git_repo": "https://github.com/hesaa/indogen-affiliate-os",
   "git_setup_at": "2026-02-04T15:28:42.671831"

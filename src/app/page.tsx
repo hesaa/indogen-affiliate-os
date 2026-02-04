@@ -11,7 +11,8 @@ import {
   Lock,
   Bot,
   Link2,
-  LayoutTemplate
+  LayoutTemplate,
+  MessageSquare
 } from "lucide-react";
 
 export default function HomePage() {
@@ -81,19 +82,19 @@ export default function HomePage() {
                 <Zap className="w-4 h-4" />
                 <span>Powered by AI & Automation</span>
               </div>
-              
+
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6">
                 Turn Social Media Into
                 <span className="block bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   Your Affiliate Empire
                 </span>
               </h1>
-              
+
               <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto mb-10 leading-relaxed">
-                The all-in-one operating system for serious affiliate marketers. Automate content rotation, 
+                The all-in-one operating system for serious affiliate marketers. Automate content rotation,
                 comment engagement, link cloaking, and landing pages—all from one dashboard.
               </p>
-              
+
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
                 <Button asChild size="lg" className="w-full sm:w-auto group">
                   <Link href="/register" className="flex items-center gap-2">
@@ -110,14 +111,14 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-gray-500">
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-2">
-                    {[1,2,3,4,5].map((i) => (
+                    {[1, 2, 3, 4, 5].map((i) => (
                       <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 border-2 border-white" />
                     ))}
                   </div>
                   <span>Join 2,000+ marketers</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  {[1,2,3,4,5].map((i) => (
+                  {[1, 2, 3, 4, 5].map((i) => (
                     <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
@@ -143,7 +144,7 @@ export default function HomePage() {
 
             <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
               {features.map((feature, index) => (
-                <div 
+                <div
                   key={index}
                   className="group relative p-6 rounded-2xl border border-gray-200 hover:border-indigo-200 hover:shadow-lg transition-all duration-300 bg-white"
                 >
@@ -220,7 +221,7 @@ export default function HomePage() {
                 Ready to Automate Your Affiliate Game?
               </h2>
               <p className="text-lg text-indigo-100 mb-10 max-w-2xl mx-auto">
-                Join thousands of smart marketers who trust Indogen OS to scale their affiliate business. 
+                Join thousands of smart marketers who trust Indogen OS to scale their affiliate business.
                 Start free, upgrade when you're ready.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">

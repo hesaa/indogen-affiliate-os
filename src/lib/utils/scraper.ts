@@ -1,4 +1,66 @@
-import { ProductReview, SocialProofData } from '@/types'
+import type { ProductReview as ImportedProductReview, SocialProofData as ImportedSocialProofData } from '@/types'
+
+/**
+ * Extended types for scraper-specific data
+ */
+export interface ScraperSocialProofData extends Omit<ImportedSocialProofData, 'reviews'> {
+  productId: string
+  productName: string
+  price: number
+  reviews: ScraperProductReview[]
+  sellerInfo: SellerInfo
+  stockStatus: StockStatus
+  discount?: Discount
+  badges: string[]
+  images: Image[]
+  specifications: Specifications
+  url: string
+  totalSales?: number
+}
+
+export interface ScraperProductReview {
+  id: string
+  author: string
+  username?: string
+  rating: number
+  text: string
+  date: Date
+  verified: boolean
+}
+
+export interface SellerInfo {
+  name: string
+  type: string
+  rating: number
+  feedbackCount: number
+  responseRate: number
+  responseTime: number
+}
+
+export interface StockStatus {
+  status: string
+  quantity: number
+  restockDate: string | null
+}
+
+export interface Discount {
+  percentage: number
+  originalPrice: number
+  until: string
+}
+
+export interface Image {
+  url: string
+  alt: string
+}
+
+export interface Specifications {
+  color: string
+  size: string
+  material: string
+  weight: string
+  compatibility: string
+}
 
 /**
  * Mock social proof scraper for Shopee/Tokopedia
@@ -11,7 +73,7 @@ export class SocialProofScraper {
    * @param url - Product URL from Shopee or Tokopedia
    * @returns Mocked social proof data
    */
-  static async scrape(url: string): Promise<SocialProofData> {
+  static async scrape(url: string): Promise<ScraperSocialProofData> {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1000))
 
@@ -24,7 +86,7 @@ export class SocialProofScraper {
 
     // Return mock social proof data
     return {
-      platform: isShopee ? 'Shopee' : isTokopedia ? 'Tokopedia' : 'Unknown',
+      platform: isShopee ? 'shopee' : isTokopedia ? 'tokopedia' : 'shopee',
       productId,
       productName: this.generateProductName(productId),
       price: this.generatePrice(),
@@ -47,13 +109,17 @@ export class SocialProofScraper {
    * @returns Extracted product ID
    */
   private static extractProductId(url: string): string {
-    const urlObj = new URL(url)
-    const pathname = urlObj.pathname
-    const parts = pathname.split('/').filter(Boolean)
+    try {
+      const urlObj = new URL(url)
+      const pathname = urlObj.pathname
+      const parts = pathname.split('/').filter(Boolean)
 
-    // Common patterns for product IDs
-    if (parts.length >= 2) {
-      return parts[parts.length - 1] // Last part is usually product ID
+      // Common patterns for product IDs
+      if (parts.length >= 2) {
+        return parts[parts.length - 1] // Last part is usually product ID
+      }
+    } catch (error) {
+      // Invalid URL, return mock ID
     }
 
     return 'mock-product-id'
@@ -100,7 +166,7 @@ export class SocialProofScraper {
    * Generate mock reviews
    * @returns Array of mock reviews
    */
-  private static generateReviews(): ProductReview[] {
+  private static generateReviews(): ScraperProductReview[] {
     const reviewTexts = [
       'Very good quality, fast delivery!',
       'Product as described, satisfied with purchase.',
@@ -118,10 +184,11 @@ export class SocialProofScraper {
 
     return Array.from({ length: Math.floor(Math.random() * 5) + 3 }, (_, i) => ({
       id: `review-${Date.now()}-${i}`,
+      author: `user${Math.floor(Math.random() * 1000)}`,
       username: `user${Math.floor(Math.random() * 1000)}`,
       rating: starRatings[i],
       text: reviewTexts[i],
-      date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(), // Last 30 days
+      date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
       verified: Math.random() > 0.3 // 70% chance of being verified
     }))
   }
@@ -130,7 +197,7 @@ export class SocialProofScraper {
    * Generate mock seller info
    * @returns Mock seller information
    */
-  private static generateSellerInfo() {
+  private static generateSellerInfo(): SellerInfo {
     const sellerNames = ['TopSeller', 'TrustedShop', 'PremiumStore', 'OfficialStore', 'BestSeller']
     const sellerTypes = ['Official Store', 'Top Rated Shop', 'Trusted Seller', 'Premium Seller']
 
@@ -148,7 +215,7 @@ export class SocialProofScraper {
    * Generate mock stock status
    * @returns Mock stock status
    */
-  private static generateStockStatus() {
+  private static generateStockStatus(): StockStatus {
     const statuses = ['In Stock', 'Limited Stock', 'Out of Stock']
     const randomStatus = statuses[Math.floor(Math.random() * statuses.length)]
 
@@ -163,7 +230,7 @@ export class SocialProofScraper {
    * Generate mock discount
    * @returns Mock discount information
    */
-  private static generateDiscount() {
+  private static generateDiscount(): Discount | undefined {
     if (Math.random() > 0.3) { // 70% chance of having discount
       return {
         percentage: Math.floor(Math.random() * 50) + 10, // 10-60%
@@ -172,16 +239,16 @@ export class SocialProofScraper {
       }
     }
 
-    return null
+    return undefined
   }
 
   /**
    * Generate mock badges
    * @returns Array of mock badges
    */
-  private static generateBadges() {
+  private static generateBadges(): string[] {
     const badges = ['Hot Sale', 'Flash Deal', 'Free Shipping', 'Official Store', 'Top Rated', 'Best Seller']
-    const randomBadges = []
+    const randomBadges: string[] = []
 
     for (let i = 0; i < Math.floor(Math.random() * 3); i++) {
       randomBadges.push(badges[Math.floor(Math.random() * badges.length)])
@@ -194,7 +261,7 @@ export class SocialProofScraper {
    * Generate mock product images
    * @returns Array of mock image URLs
    */
-  private static generateImages() {
+  private static generateImages(): Image[] {
     const imageCount = Math.floor(Math.random() * 5) + 1 // 1-5 images
     return Array.from({ length: imageCount }, (_, i) => ({
       url: `https://picsum.photos/seed/${Math.random().toString(36).substr(2, 9)}-${i}/400/400.jpg`,
@@ -206,7 +273,7 @@ export class SocialProofScraper {
    * Generate mock specifications
    * @returns Mock product specifications
    */
-  private static generateSpecifications() {
+  private static generateSpecifications(): Specifications {
     const specs = {
       color: ['Black', 'White', 'Blue', 'Red', 'Silver', 'Gold'],
       size: ['Small', 'Medium', 'Large', 'X-Large'],
@@ -223,67 +290,4 @@ export class SocialProofScraper {
       compatibility: specs.compatibility[Math.floor(Math.random() * specs.compatibility.length)]
     }
   }
-}
-
-/**
- * Type definitions for social proof data
- */
-export interface SocialProofData {
-  platform: string
-  productId: string
-  productName: string
-  price: number
-  rating: number
-  reviewCount: number
-  reviews: ProductReview[]
-  sellerInfo: SellerInfo
-  stockStatus: StockStatus
-  discount?: Discount
-  badges: string[]
-  images: Image[]
-  specifications: Specifications
-  url: string
-}
-
-export interface ProductReview {
-  id: string
-  username: string
-  rating: number
-  text: string
-  date: string
-  verified: boolean
-}
-
-export interface SellerInfo {
-  name: string
-  type: string
-  rating: number
-  feedbackCount: number
-  responseRate: number
-  responseTime: number
-}
-
-export interface StockStatus {
-  status: string
-  quantity: number
-  restockDate: string | null
-}
-
-export interface Discount {
-  percentage: number
-  originalPrice: number
-  until: string
-}
-
-export interface Image {
-  url: string
-  alt: string
-}
-
-export interface Specifications {
-  color: string
-  size: string
-  material: string
-  weight: string
-  compatibility: string
 }
