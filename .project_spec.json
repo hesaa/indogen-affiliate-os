@@ -1,0 +1,103 @@
+{
+  "project_name": "IndoGen_Affiliate_OS",
+  "core_features": [
+    "Smart Content Rotator with visual shuffling and metadata scrubbing",
+    "Automated Comment Sniper with keyword triggers and natural delay",
+    "Advanced Link Cloaker with URL wrapping and bot-filtering",
+    "Micro-Landing Page Generator with social proof scraping",
+    "Bun-powered video rendering worker with FFmpeg integration",
+    "Credit-based system for scalable video rendering",
+    "Unique domain rotation for Elite-tier users"
+  ],
+  "tech_stack": {
+    "frontend": "Next.js 16.1.6 (App Router in src/ directory)",
+    "database": "Drizzle ORM with PostgreSQL",
+    "styling": "Tailwind CSS",
+    "runtime": "Bun",
+    "queue": "Redis",
+    "structure": "Source code MUST be inside 'src/' folder"
+  },
+  "file_structure": [
+    {
+      "path": "src/app/layout.tsx",
+      "purpose": "Root layout setup"
+    },
+    {
+      "path": "src/app/page.tsx",
+      "purpose": "Homepage with pricing tiers"
+    },
+    {
+      "path": "src/app/dashboard/page.tsx",
+      "purpose": "User dashboard"
+    },
+    {
+      "path": "src/app/api/renders/route.ts",
+      "purpose": "Render job API endpoint"
+    },
+    {
+      "path": "src/app/api/links/route.ts",
+      "purpose": "Link cloaking API endpoint"
+    },
+    {
+      "path": "src/components/VideoRotator.tsx",
+      "purpose": "Smart content rotator component"
+    },
+    {
+      "path": "src/components/CommentSniper.tsx",
+      "purpose": "Automated comment sniper component"
+    },
+    {
+      "path": "src/components/LinkCloaker.tsx",
+      "purpose": "Link cloaking component"
+    },
+    {
+      "path": "src/components/LandingPageGenerator.tsx",
+      "purpose": "Micro-landing page generator"
+    },
+    {
+      "path": "src/lib/ffmpeg-worker.ts",
+      "purpose": "Bun-powered FFmpeg worker"
+    },
+    {
+      "path": "src/lib/redis-queue.ts",
+      "purpose": "Redis job queue implementation"
+    },
+    {
+      "path": "src/lib/drizzle.ts",
+      "purpose": "Drizzle ORM configuration"
+    },
+    {
+      "path": "src/types/index.ts",
+      "purpose": "Type definitions"
+    },
+    {
+      "path": "src/hooks/useRenderJobs.ts",
+      "purpose": "Custom hook for render jobs"
+    },
+    {
+      "path": "src/hooks/useCloakedLinks.ts",
+      "purpose": "Custom hook for cloaked links"
+    },
+    {
+      "path": "src/database/schema.ts",
+      "purpose": "Database schema definitions"
+    },
+    {
+      "path": "package.json",
+      "purpose": "Project dependencies"
+    },
+    {
+      "path": "tsconfig.json",
+      "purpose": "TypeScript configuration"
+    },
+    {
+      "path": "next.config.js",
+      "purpose": "Next.js configuration"
+    },
+    {
+      "path": "drizzle.config.ts",
+      "purpose": "Drizzle ORM configuration"
+    }
+  ],
+  "architectural_reasoning": "The proposed architecture follows Next.js 16.1.6 App Router best practices with all source code inside the 'src/' directory. The file structure is organized by feature, with API routes, components, and utilities separated logically. The use of Bun runtime with Redis queue and FFmpeg workers ensures scalable video rendering, while Drizzle ORM provides type-safe database operations. The architecture addresses the critical business goals by implementing all four pillars: Smart Content Rotator for anti-shadowban, Automated Comment Sniper for conversion boosting, Advanced Link Cloaker for safety, and Micro-Landing Page Generator for trust building. The credit-based system and unique domain rotation address the intellectual sparring recommendations for scalability and AI detection avoidance."
+}

@@ -1,0 +1,354 @@
+{
+  "version": 2,
+  "current_phase": "git_setup",
+  "blueprint_hash": "af029ba23f0778f2f3e416bc45d80517",
+  "completed_files": [
+    "src/app/layout.tsx",
+    "src/app/page.tsx",
+    "src/app/(auth)/login/page.tsx",
+    "src/app/(auth)/register/page.tsx",
+    "src/app/dashboard/layout.tsx",
+    "src/app/dashboard/page.tsx",
+    "src/app/dashboard/render/page.tsx",
+    "src/lib/utils.ts",
+    "src/app/dashboard/render/[id]/page.tsx",
+    "src/components/ui/Badge.tsx",
+    "src/app/dashboard/links/page.tsx",
+    "src/app/dashboard/links/create/page.tsx",
+    "src/components/ui/Input.tsx",
+    "src/app/dashboard/comments/page.tsx",
+    "src/app/dashboard/comments/triggers/page.tsx",
+    "src/components/ui.tsx",
+    "src/app/dashboard/comments/accounts/page.tsx",
+    "src/app/dashboard/landing-pages/page.tsx",
+    "config/constants.ts",
+    "src/components/ui/Textarea.tsx",
+    "src/app/api/render/route.ts",
+    "src/app/api/render/[id]/route.ts",
+    "src/app/api/links/route.ts",
+    "src/app/api/redirect/[slug]/route.ts",
+    "src/app/api/comments/triggers/route.ts",
+    "src/app/api/comments/accounts/route.ts",
+    "src/app/api/comments/scan/route.ts",
+    "src/app/api/landing-pages/route.ts",
+    "src/app/api/landing-pages/[slug]/route.ts",
+    "src/app/api/auth/[...nextauth]/route.ts",
+    "src/app/api/auth/register/route.ts",
+    "src/components/ui/Button.tsx",
+    "src/components/ui/Card.tsx",
+    "src/components/dashboard/Sidebar.tsx",
+    "src/components/dashboard/RenderJobCard.tsx",
+    "src/components/dashboard/LinkStat.tsx",
+    "src/lib/db/schema.ts",
+    "src/lib/db/index.ts",
+    "src/lib/redis/client.ts",
+    "src/lib/auth/authOptions.ts",
+    "src/lib/auth/routeHandler.ts",
+    "src/lib/utils/render.ts",
+    "src/lib/utils/cloak.ts",
+    "src/lib/utils/scraper.ts",
+    "src/hooks/useAuth.ts",
+    "src/hooks/useRenderJob.ts",
+    "src/hooks/useCommentScan.ts",
+    "src/types/index.ts",
+    "src/worker/renderWorker.ts",
+    "src/middleware.ts",
+    "drizzle.config.ts",
+    "next.config.js",
+    "package.json",
+    "tsconfig.json",
+    ".env.example",
+    "src/lib/api-client.ts",
+    "src/app/dashboard/landing-pages/create/page.tsx",
+    "src/app/landing/[slug]/page.tsx",
+    "src/components/ui/Select.tsx",
+    "src/hooks/useToast.ts",
+    "src/lib/auth.ts",
+    "src/lib/db/cloakedLinks.ts",
+    "src/components/ui/Form.tsx",
+    "src/components/ui/Label.tsx"
+  ],
+  "pending_files": [],
+  "errors": [],
+  "atomic_operations": true,
+  "created_at": "2026-02-04T14:22:54.892513",
+  "last_updated": "2026-02-04T15:29:58.865748",
+  "state_version": 153,
+  "project_spec": {
+    "project_name": "indogen-affiliate-os",
+    "core_features": [
+      "Smart Content Rotator (Anti-Shadowban) - Visual shuffling, metadata scrubbing, dynamic overlay",
+      "Automated Comment Sniper - Keyword-triggered replies with natural delays and bio/DM redirection",
+      "Advanced Link Cloaker - URL masking with bot detection and safe page serving",
+      "Micro-Landing Page Generator - Social proof scraping, urgency timers, auto-generated pages"
+    ],
+    "tech_stack": {
+      "frontend": "Next.js 14 (App Router in src/ directory)",
+      "database": "Drizzle ORM with PostgreSQL",
+      "styling": "Tailwind CSS",
+      "structure": "Source code MUST be inside 'src/' folder",
+      "runtime": "Bun for video rendering worker",
+      "queue": "Redis for job queuing",
+      "video_processing": "FFmpeg via Bun.spawn"
+    },
+    "file_structure": [
+      {
+        "path": "src/app/layout.tsx",
+        "purpose": "Root layout with font optimization, metadata, and global providers (Auth, Theme)"
+      },
+      {
+        "path": "src/app/page.tsx",
+        "purpose": "Public landing page with value proposition and CTA"
+      },
+      {
+        "path": "src/app/(auth)/login/page.tsx",
+        "purpose": "User login page with email/password authentication"
+      },
+      {
+        "path": "src/app/(auth)/register/page.tsx",
+        "purpose": "User registration with plan selection (Starter/Pro/Empire)"
+      },
+      {
+        "path": "src/app/dashboard/layout.tsx",
+        "purpose": "Dashboard layout with sidebar navigation and user menu"
+      },
+      {
+        "path": "src/app/dashboard/page.tsx",
+        "purpose": "Dashboard home with key metrics and quick actions"
+      },
+      {
+        "path": "src/app/dashboard/render/page.tsx",
+        "purpose": "Video render job creation form and job history list"
+      },
+      {
+        "path": "src/app/dashboard/render/[id]/page.tsx",
+        "purpose": "Individual render job details with status, preview, and download"
+      },
+      {
+        "path": "src/app/dashboard/links/page.tsx",
+        "purpose": "Cloaked link management (list, create, stats)"
+      },
+      {
+        "path": "src/app/dashboard/links/create/page.tsx",
+        "purpose": "Create new cloaked link with slug customization"
+      },
+      {
+        "path": "src/app/dashboard/comments/page.tsx",
+        "purpose": "Comment sniper dashboard: trigger management and social account connections"
+      },
+      {
+        "path": "src/app/dashboard/comments/triggers/page.tsx",
+        "purpose": "List and create keyword-triggered auto-reply templates"
+      },
+      {
+        "path": "src/app/dashboard/comments/accounts/page.tsx",
+        "purpose": "Connect/manage TikTok/Instagram accounts via OAuth tokens"
+      },
+      {
+        "path": "src/app/dashboard/landing-pages/page.tsx",
+        "purpose": "Landing page management (list, create, edit)"
+      },
+      {
+        "path": "src/app/dashboard/landing-pages/create/page.tsx",
+        "purpose": "Create new landing page with product URL, reviews, and timer"
+      },
+      {
+        "path": "src/app/landing/[slug]/page.tsx",
+        "purpose": "Public micro-landing page with social proof and urgency timer"
+      },
+      {
+        "path": "src/app/api/render/route.ts",
+        "purpose": "POST: Queue new video render job; GET: List user's render jobs"
+      },
+      {
+        "path": "src/app/api/render/[id]/route.ts",
+        "purpose": "GET: Fetch individual render job status and output URL"
+      },
+      {
+        "path": "src/app/api/links/route.ts",
+        "purpose": "POST: Create cloaked link; GET: List user's cloaked links"
+      },
+      {
+        "path": "src/app/api/redirect/[slug]/route.ts",
+        "purpose": "GET: Handle cloaked link redirects with bot detection and click tracking"
+      },
+      {
+        "path": "src/app/api/comments/triggers/route.ts",
+        "purpose": "POST: Create trigger; GET: List triggers; PUT/DELETE: Manage triggers"
+      },
+      {
+        "path": "src/app/api/comments/accounts/route.ts",
+        "purpose": "POST: Connect social account; GET: List accounts; DELETE: Disconnect"
+      },
+      {
+        "path": "src/app/api/comments/scan/route.ts",
+        "purpose": "POST: Trigger manual comment scan and auto-reply for connected accounts"
+      },
+      {
+        "path": "src/app/api/landing-pages/route.ts",
+        "purpose": "POST: Create landing page; GET: List user's landing pages"
+      },
+      {
+        "path": "src/app/api/landing-pages/[slug]/route.ts",
+        "purpose": "GET: Fetch landing page config; PUT: Update; DELETE: Remove"
+      },
+      {
+        "path": "src/app/api/auth/[...nextauth]/route.ts",
+        "purpose": "NextAuth.js handler for authentication (OAuth & credentials)"
+      },
+      {
+        "path": "src/app/api/auth/register/route.ts",
+        "purpose": "User registration endpoint with plan assignment"
+      },
+      {
+        "path": "src/components/ui/Button.tsx",
+        "purpose": "Reusable button component with variants (shadcn/ui style)"
+      },
+      {
+        "path": "src/components/ui/Card.tsx",
+        "purpose": "Card component for dashboard widgets"
+      },
+      {
+        "path": "src/components/dashboard/Sidebar.tsx",
+        "purpose": "Dashboard navigation sidebar with plan badge"
+      },
+      {
+        "path": "src/components/dashboard/RenderJobCard.tsx",
+        "purpose": "Card component for render job preview and status"
+      },
+      {
+        "path": "src/components/dashboard/LinkStat.tsx",
+        "purpose": "Component showing click count and conversion for cloaked links"
+      },
+      {
+        "path": "src/lib/db/schema.ts",
+        "purpose": "Drizzle schema definitions for all tables (users, render_jobs, cloaked_links, social_accounts, comment_triggers, landing_pages)"
+      },
+      {
+        "path": "src/lib/db/index.ts",
+        "purpose": "Drizzle database connection instance and type exports"
+      },
+      {
+        "path": "src/lib/redis/client.ts",
+        "purpose": "Redis client singleton with connection management for job queue"
+      },
+      {
+        "path": "src/lib/auth/authOptions.ts",
+        "purpose": "NextAuth configuration (credentials & OAuth providers)"
+      },
+      {
+        "path": "src/lib/auth/routeHandler.ts",
+        "purpose": "Custom NextAuth callbacks for role/plan-based access"
+      },
+      {
+        "path": "src/lib/utils/render.ts",
+        "purpose": "Helper functions for render job payload construction and validation"
+      },
+      {
+        "path": "src/lib/utils/cloak.ts",
+        "purpose": "Bot detection logic and safe page generation for cloaked links"
+      },
+      {
+        "path": "src/lib/utils/scraper.ts",
+        "purpose": "Social proof scraper for Shopee/Tokopedia (mock implementation for MVP)"
+      },
+      {
+        "path": "src/hooks/useAuth.ts",
+        "purpose": "Custom hook for authenticated user session and plan data"
+      },
+      {
+        "path": "src/hooks/useRenderJob.ts",
+        "purpose": "Hook for polling render job status and managing uploads"
+      },
+      {
+        "path": "src/hooks/useCommentScan.ts",
+        "purpose": "Hook for triggering and monitoring comment scanning"
+      },
+      {
+        "path": "src/types/index.ts",
+        "purpose": "Global TypeScript types (API responses, job payloads, etc.)"
+      },
+      {
+        "path": "src/worker/renderWorker.ts",
+        "purpose": "Bun-based worker that processes render jobs from Redis queue using FFmpeg"
+      },
+      {
+        "path": "src/middleware.ts",
+        "purpose": "Next.js middleware for authentication protection and plan-based route access"
+      },
+      {
+        "path": "drizzle.config.ts",
+        "purpose": "Drizzle ORM configuration (schema location, output, dialect)"
+      },
+      {
+        "path": "next.config.js",
+        "purpose": "Next.js configuration (images, env vars, experimental flags)"
+      },
+      {
+        "path": "package.json",
+        "purpose": "Project dependencies and scripts (including Bun worker script)"
+      },
+      {
+        "path": "tsconfig.json",
+        "purpose": "TypeScript configuration with path aliases for @/*"
+      },
+      {
+        "path": ".env.example",
+        "purpose": "Environment variable template (DATABASE_URL, REDIS_URL, NEXTAUTH_SECRET, etc.)"
+      },
+      {
+        "path": "src/components/ui/Form.tsx",
+        "purpose": "Dependency discovered from src/app/dashboard/render/page.tsx"
+      },
+      {
+        "path": "src/lib/utils.ts",
+        "purpose": "Dependency discovered from src/components/ui/Form.tsx"
+      },
+      {
+        "path": "src/components/ui/Badge.tsx",
+        "purpose": "Dependency discovered from src/app/dashboard/render/[id]/page.tsx"
+      },
+      {
+        "path": "src/components/ui/Input.tsx",
+        "purpose": "Dependency discovered from src/app/dashboard/links/create/page.tsx"
+      },
+      {
+        "path": "src/components/ui.tsx",
+        "purpose": "Dependency discovered from src/app/dashboard/comments/page.tsx"
+      },
+      {
+        "path": "src/lib/api-client.ts",
+        "purpose": "Dependency discovered from src/app/dashboard/comments/page.tsx"
+      },
+      {
+        "path": "config/constants.ts",
+        "purpose": "Dependency discovered from src/lib/api-client.ts"
+      },
+      {
+        "path": "src/components/ui/Textarea.tsx",
+        "purpose": "Dependency discovered from src/app/dashboard/landing-pages/create/page.tsx"
+      },
+      {
+        "path": "src/components/ui/Label.tsx",
+        "purpose": "Dependency discovered from src/app/dashboard/landing-pages/create/page.tsx"
+      },
+      {
+        "path": "src/lib/auth.ts",
+        "purpose": "Dependency discovered from src/app/api/redirect/[slug]/route.ts"
+      },
+      {
+        "path": "src/lib/db/cloakedLinks.ts",
+        "purpose": "Dependency discovered from src/lib/utils/cloak.ts"
+      },
+      {
+        "path": "src/components/ui/Select.tsx",
+        "purpose": "Dependency discovered from src/app/dashboard/landing-pages/create/page.tsx"
+      },
+      {
+        "path": "src/hooks/useToast.ts",
+        "purpose": "Dependency discovered from src/app/dashboard/landing-pages/create/page.tsx"
+      }
+    ],
+    "architectural_reasoning": "This architecture fulfills the blueprint by delivering a scalable, type-safe micro-SaaS with clear separation of concerns. The Next.js 14 App Router (in src/) provides a modern, server-component-first UI with API routes for all four pillars. Drizzle ORM ensures PostgreSQL interactions are type-safe and maintainable. The Bun rendering worker (src/worker/renderWorker.ts) handles CPU-intensive video processing with minimal overhead via Bun.spawn and Redis queuing, preventing serverless timeout issues. All source code resides in src/ as mandated, with configuration files in root. The design supports horizontal scaling: the worker can be replicated independently, and the stateless Next.js app can be deployed on Vercel/Node.js hosting. Authentication via NextAuth secures user data isolation per plan (Starter/Pro/Empire). The bot-filtering cloaker and comment sniper use server-side logic to avoid client-side detection, while the landing page generator creates SEO-friendly public pages. This structure aligns with the 30-day MVP plan: Weeks 1-2 focus on the Rotator (core rendering pipeline), Week 3 adds Cloaker and Landing Pages, and Week 4 enables Comment Sniper integration with social APIs. The use of Redis for job queuing ensures reliability, and the modular component library (src/components/) allows rapid UI iteration for Indonesian affiliate creators."
+  }
+}
